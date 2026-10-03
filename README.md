@@ -1,5 +1,7 @@
 # VELOCITY//BREAKER — Prototype 01
 
+公開URL（GitHub Pages）: https://kochagaming.github.io/2dShooting/
+
 弾幕を安全に避けるのではなく、敵弾へ踏み込み、NEAR MISSでBOOSTを奪って加速する高速縦スクロール・ラン＆ガンの操作感検証プロトタイプです。
 
 ## 使用技術
