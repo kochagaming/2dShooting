@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#05070d">
+  <meta name="description" content="弾幕へ飛び込み、ニアミスで加速する高速縦スクロール・アクションシューティング。">
+  <title>VELOCITY//BREAKER — Prototype</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath fill='%23060a12' d='M0 0h32v32H0z'/%3E%3Cpath fill='%2300f0ff' d='M16 2l9 10-5 2 5 5-9 11-9-11 5-5-5-2z'/%3E%3Cpath fill='%23fff' d='M14 8h4v12h-4z'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <main class="shell" aria-label="VELOCITY BREAKER ゲームプロトタイプ">
+    <section class="game-frame" id="gameFrame">
+      <canvas id="game" width="720" height="960" aria-label="ゲーム画面"></canvas>
+      <div class="scanlines" aria-hidden="true"></div>
+
+      <header class="hud hud-top" aria-live="polite">
+        <div class="brand"><span>VELOCITY</span><b>//BREAKER</b><small>PROTOTYPE 01</small></div>
+        <div class="score-block"><small>SCORE</small><strong id="score">000000</strong><span id="combo">—</span></div>
+      </header>
+
+      <aside class="hp-wrap" aria-label="ヒットポイント">
+        <span>CORE</span><div class="hp-track"><i id="hpBar"></i></div><b id="hpText">100</b>
+      </aside>
+
+      <section class="boost-wrap" aria-label="ブーストゲージ">
+        <div class="boost-label"><span id="boostLevel">BOOST LV1</span><b id="boostValue">0%</b></div>
+        <div class="boost-track"><i id="boostBar"></i><em></em></div>
+      </section>
+
+      <div class="speed"><small>VELOCITY</small><strong id="speed">000</strong><span>km/h</span></div>
+      <div class="run-status" aria-live="polite"><b id="stageLabel">STAGE 1 // VERDANT ROUTE</b><span id="waveLabel">WAVE 1 / 5</span><strong id="eventLabel">OPEN MEADOW</strong><em>CORE <i id="runCore">0</i></em><i class="weapon-readout" id="weaponLabel">HG // HANDGUN</i></div>
+      <div class="run-contract" aria-live="polite"><small>RUN ORDER</small><b id="contractLabel">GRAZE ORDER</b><span><i id="contractBar"></i></span><em id="contractProgress">0 / 15</em><strong id="contractReward">CORE +3</strong></div>
+      <section id="bossHud" class="boss-hud" aria-label="ボス耐久値" hidden><small id="bossName">PURSUER // ROAD HUNTER</small><div><i id="bossBar"></i></div><b id="bossHp">0%</b></section>
+      <div id="announcer" class="announcer" aria-live="assertive"></div>
+      <div id="debug" class="debug" hidden></div>
+
+      <section id="startScreen" class="overlay start-screen">
+        <div class="start-mark" aria-hidden="true">V<span>//</span>B</div>
+        <figure class="ray-keyart" id="selectedKeyart" aria-label="選択中の操作キャラクター">
+          <img id="selectedKeyartImage" src="./assets/ray-key-art.png" alt="選択中の操作キャラクターの正面アート">
+          <figcaption><b id="selectedCharacterName">RAY</b><span id="selectedCharacterCode">ESCAPED SUBJECT // 07</span><small id="selectedCharacterMeta">BALANCED BOOST FIGHTER</small></figcaption>
+        </figure>
+        <div class="start-content">
+          <p class="eyebrow">COMBAT TEST // VERDANT ROUTE</p>
+          <h1>弾幕へ、<br><em>踏み込め。</em></h1>
+          <p class="lead" id="selectedCharacterLead"><strong>レイ</strong> — 都市警備組織から逃亡した元実験体。脚部のBOOST DRIVEで、追手の弾幕を速度へ変える。</p>
+          <figure class="control-diagram control-diagram--compact" aria-label="操作キー説明図">
+          <div class="move-keys" aria-label="WASDで8方向移動">
+            <kbd class="key-w">W<i>↑</i></kbd><kbd class="key-a">A<i>←</i></kbd><kbd class="key-s">S<i>↓</i></kbd><kbd class="key-d">D<i>→</i></kbd>
+            <span>8方向移動</span>
+          </div>
+          <div class="action-keys">
+            <div><kbd>Z</kbd><i class="action-line shoot-line"></i><strong>射撃</strong><small>長押し</small></div>
+            <div><kbd>SPACE</kbd><i class="action-line dash-line"></i><strong>ダッシュ</strong></div>
+            <div><kbd>X</kbd><i class="action-line slash-line"></i><strong>斬撃</strong></div>
+          </div>
+          <div class="mouse-map" aria-label="マウス操作">
+            <div class="mouse-shape"><i></i><b></b></div>
+            <span><em>L</em> 射撃</span><span><em>R</em> 斬撃</span>
+          </div>
+          <figcaption><b>C</b> スライド　<b>Q</b> 武器変更　ダッシュ中に斬撃で<strong>DASH BREAK</strong></figcaption>
+          </figure>
+          <div class="start-actions">
+            <button id="startButton" type="button"><span>RUN PROTOTYPE</span><small>ENTER</small></button>
+            <button id="openSpriteSelect" class="secondary-button" type="button"><span>SELECT LOADOUT</span><small>3 CHARACTERS</small></button>
+          </div>
+          <div class="bank-core">DRIVE CORE <b id="bankCore">0</b><small>敵から回収して恒久強化に使用</small></div>
+          <p class="hint"><kbd>H</kbd> 操作図を拡大　<kbd>F3</kbd> デバッグ　<kbd>P</kbd> ポーズ</p>
+        </div>
+      </section>
+
+      <section id="gameOver" class="overlay game-over" hidden>
+        <p class="eyebrow" id="resultEyebrow">RUN TERMINATED</p>
+        <h2 id="resultTitle">CORE<br>BREAK</h2>
+        <div class="rank-badge"><small>RUN RANK</small><b id="runRank">D</b></div>
+        <dl><div><dt>SCORE</dt><dd id="finalScore">0</dd></div><div><dt>MAX COMBO</dt><dd id="maxCombo">0</dd></div><div><dt>REACHED</dt><dd id="stageReached">S1-W1</dd></div></dl>
+        <div class="run-report"><span>KILL <b id="resultKills">0</b></span><span>NEAR MISS <b id="resultNear">0</b></span><span>DAMAGE <b id="resultDamage">0</b></span><span>TIME <b id="resultTime">00:00</b></span></div>
+        <div class="reward-summary"><span>RECOVERED</span><strong>◆ <b id="runReward">0</b></strong><small>TOTAL CORE <b id="resultCore">0</b></small></div>
+        <div class="game-over-actions"><button id="restartButton" type="button"><span id="restartLabel">REBOOT</span><small>ENTER</small></button><button id="resultUpgrade" class="secondary-button" type="button"><span>UPGRADE</span><small>強化へ</small></button></div>
+      </section>
+
+      <section id="controlHelp" class="overlay control-help" hidden aria-labelledby="controlHelpTitle">
+        <p class="eyebrow">CONTROL SCHEMATIC</p>
+        <h2 id="controlHelpTitle">操作ガイド</h2>
+        <figure class="control-diagram control-diagram--full">
+          <div class="move-keys">
+            <kbd class="key-w">W<i>↑</i></kbd><kbd class="key-a">A<i>←</i></kbd><kbd class="key-s">S<i>↓</i></kbd><kbd class="key-d">D<i>→</i></kbd>
+            <span>WASD / 矢印キー</span><strong>8方向へ高速移動</strong>
+          </div>
+          <div class="action-keys">
+            <div><kbd>Z</kbd><i class="action-line shoot-line"></i><strong>射撃</strong><small>J / 左クリックも使用可</small></div>
+            <div><kbd>SPACE</kbd><i class="action-line dash-line"></i><strong>無敵ダッシュ</strong><small>Shiftも使用可</small></div>
+            <div><kbd>X</kbd><i class="action-line slash-line"></i><strong>斬撃</strong><small>K / 右クリックも使用可</small></div>
+            <div><kbd>C</kbd><i class="action-line dash-line"></i><strong>スライディング</strong><small>Ctrlも使用可</small></div>
+            <div><kbd>Q</kbd><i class="action-line shoot-line"></i><strong>武器切替</strong><small>4種を順番に変更</small></div>
+          </div>
+          <div class="mouse-map">
+            <div class="mouse-shape"><i></i><b></b></div>
+            <span><em>L</em> カーソル方向へ射撃</span><span><em>R</em> 斬撃・敵弾破壊</span>
+          </div>
+          <figcaption><b>SPACE → X</b> で敵へ吸着するダッシュ斬り。高速中の逆入力で急旋回。ダッシュ直後の弾際は<b>JUST DODGE</b>となりBOOSTを大量獲得。</figcaption>
+        </figure>
+        <button id="closeHelp" type="button"><span>ゲームへ戻る</span><small>H / ESC</small></button>
+      </section>
+
+      <section id="spriteSelect" class="overlay sprite-select" hidden aria-labelledby="spriteSelectTitle">
+        <header>
+          <div><p class="eyebrow">LOADOUT // SELECT</p><h2 id="spriteSelectTitle">出撃キャラクター</h2></div>
+          <div class="selector-steps" aria-label="選択手順"><b id="characterStep" class="active">01 CHARACTER</b><i></i><b id="outfitStep">02 OUTFIT</b></div>
+        </header>
+        <div id="characterSelectStage" class="selector-stage">
+          <div class="character-grid" role="radiogroup" aria-label="操作キャラクター候補">
+            <button class="character-card ray" type="button" data-character="ray" role="radio"><span class="char-number">01</span><img src="./assets/ray-options/ray-07.png" alt="レイ"><div class="char-copy"><small>BALANCED</small><strong>RAY <em>レイ</em></strong><p>BOOST DRIVEで弾幕を駆ける万能型</p><dl><div><dt>速度</dt><dd><i style="--stat:72%"></i></dd></div><div><dt>射撃</dt><dd><i style="--stat:72%"></i></dd></div><div><dt>斬撃</dt><dd><i style="--stat:72%"></i></dd></div><div><dt>耐久</dt><dd><i style="--stat:66%"></i></dd></div></dl></div></button>
+            <button class="character-card mira" type="button" data-character="mira" role="radio"><span class="char-number">02</span><img src="./assets/characters/mira.png?v=rear2" alt="背面を向いたミラ"><div class="char-copy"><small>HEAVY GUNNER</small><strong>MIRA <em>ミラ</em></strong><p>重装甲と高威力カービンで制圧する射撃型</p><dl><div><dt>速度</dt><dd><i style="--stat:48%"></i></dd></div><div><dt>射撃</dt><dd><i style="--stat:94%"></i></dd></div><div><dt>斬撃</dt><dd><i style="--stat:42%"></i></dd></div><div><dt>耐久</dt><dd><i style="--stat:96%"></i></dd></div></dl></div></button>
+            <button class="character-card lyn" type="button" data-character="lyn" role="radio"><span class="char-number">03</span><img src="./assets/characters/lyn.png?v=rear2" alt="背面を向いたリン"><div class="char-copy"><small>INTERCEPTOR</small><strong>LYN <em>リン</em></strong><p>最速ダッシュと大斬撃で懐へ飛び込む近接型</p><dl><div><dt>速度</dt><dd><i style="--stat:98%"></i></dd></div><div><dt>射撃</dt><dd><i style="--stat:58%"></i></dd></div><div><dt>斬撃</dt><dd><i style="--stat:100%"></i></dd></div><div><dt>耐久</dt><dd><i style="--stat:42%"></i></dd></div></dl></div></button>
+          </div>
+        </div>
+        <div id="outfitSelectStage" class="selector-stage" hidden>
+          <div class="outfit-heading"><button id="backToCharacters" type="button">← CHARACTER</button><div><small id="outfitCharacterRole">BALANCED</small><h3><span id="outfitCharacterName">RAY</span> // 衣装選択</h3></div></div>
+          <section class="parameter-panel" aria-labelledby="parameterTitle">
+            <header><small>LIVE PERFORMANCE // BOOST LV1</small><h3 id="parameterTitle">出撃パラメータ</h3></header>
+            <div id="parameterGrid" class="parameter-grid"></div>
+          </section>
+          <div id="outfitGrid" class="sprite-grid outfit-grid" role="radiogroup" aria-label="衣装候補"></div>
+          <section class="upgrade-panel" aria-labelledby="upgradeTitle">
+            <header><div><small>PERMANENT TUNING</small><h3 id="upgradeTitle">恒久強化</h3></div><b>DRIVE CORE <span id="upgradeCore">0</span></b></header>
+            <div id="upgradeGrid" class="upgrade-grid"></div>
+            <p>強化はこの画面でのみ実行できます。効果は次回以降の挑戦にも引き継がれます。</p>
+          </section>
+        </div>
+        <div class="selector-footer"><span id="selectedSpriteLabel">RAY // OUTFIT 07 FLUFF JACKET</span><button id="closeSpriteSelect" type="button"><span>この装備で戻る</span><small>ESC</small></button></div>
+      </section>
+
+      <div id="pause" class="pause" hidden>PAUSED</div>
+    </section>
+    <footer><span>VERDANT ROUTE</span><i></i><span>AGGRESSION REWARDED</span></footer>
+  </main>
+  <script type="module" src="./js/game.js"></script>
+</body>
+</html>
