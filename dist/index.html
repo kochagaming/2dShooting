@@ -30,13 +30,14 @@
       </section>
 
       <div class="speed"><small>VELOCITY</small><strong id="speed">000</strong><span>km/h</span></div>
-      <div class="run-status" aria-live="polite"><b id="stageLabel">STAGE 1 // VERDANT ROUTE</b><span id="waveLabel">WAVE 1 / 5</span><strong id="eventLabel">OPEN MEADOW</strong><em>CORE <i id="runCore">0</i></em><i class="weapon-readout" id="weaponLabel">HG // HANDGUN</i></div>
+      <div class="run-status" aria-live="polite"><b id="stageLabel">STAGE 1 // VERDANT ROUTE</b><span id="waveLabel">WAVE 1 / 1</span><strong id="eventLabel">PURSUER APPROACH</strong><em>CORE <i id="runCore">0</i></em><i class="weapon-readout" id="weaponLabel">HG // HANDGUN</i></div>
       <div class="run-contract" aria-live="polite"><small>RUN ORDER</small><b id="contractLabel">GRAZE ORDER</b><span><i id="contractBar"></i></span><em id="contractProgress">0 / 15</em><strong id="contractReward">CORE +3</strong></div>
       <section id="bossHud" class="boss-hud" aria-label="ボス耐久値" hidden><small id="bossName">PURSUER // ROAD HUNTER</small><div><i id="bossBar"></i></div><b id="bossHp">0%</b></section>
       <div id="announcer" class="announcer" aria-live="assertive"></div>
       <div id="debug" class="debug" hidden></div>
 
       <section id="touchControls" class="touch-controls" aria-label="スマートフォン操作" hidden>
+        <button id="touchPause" class="touch-pause" type="button" aria-label="ゲームを一時停止" aria-pressed="false"><b>Ⅱ</b><small>PAUSE</small></button>
         <div id="touchStick" class="touch-stick" aria-label="移動スティック"><i id="touchStickKnob"></i><span>MOVE</span></div>
         <div class="touch-actions">
           <button class="touch-button touch-weapon" type="button" data-touch-key="KeyQ"><b>Q</b><small>WEAPON</small></button>
@@ -59,6 +60,7 @@
           <p class="lead" id="selectedCharacterLead"><strong>レイ</strong> — 都市警備組織から逃亡した元実験体。脚部のBOOST DRIVEで、追手の弾幕を速度へ変える。</p>
           <div class="start-actions">
             <button id="startButton" type="button"><span>RUN PROTOTYPE</span><small>ENTER</small></button>
+            <button id="openStageSelect" class="secondary-button" type="button"><span id="selectedRouteButton">SELECT ROUTE // STAGE 1</span><small>10 STAGES + ∞</small></button>
             <button id="openSpriteSelect" class="secondary-button" type="button"><span>SELECT LOADOUT</span><small>3 CHARACTERS</small></button>
             <button id="openHelp" class="secondary-button" type="button"><span>操作説明</span><small>H</small></button>
           </div>
@@ -76,7 +78,7 @@
         <dl><div><dt>SCORE</dt><dd id="finalScore">0</dd></div><div><dt>MAX COMBO</dt><dd id="maxCombo">0</dd></div><div><dt>REACHED</dt><dd id="stageReached">S1-W1</dd></div></dl>
         <div class="run-report"><span>KILL <b id="resultKills">0</b></span><span>NEAR MISS <b id="resultNear">0</b></span><span>DAMAGE <b id="resultDamage">0</b></span><span>TIME <b id="resultTime">00:00</b></span></div>
         <div class="reward-summary"><span>RECOVERED</span><strong>◆ <b id="runReward">0</b></strong><small>TOTAL CORE <b id="resultCore">0</b></small></div>
-        <div class="game-over-actions"><button id="restartButton" type="button"><span id="restartLabel">REBOOT</span><small>ENTER</small></button><button id="resultUpgrade" class="secondary-button" type="button"><span>UPGRADE</span><small>強化へ</small></button></div>
+        <div class="game-over-actions"><button id="restartButton" type="button"><span id="restartLabel">REBOOT</span><small>ENTER</small></button><button id="resultRoute" class="secondary-button" type="button"><span>ROUTE</span><small>ステージ選択</small></button><button id="resultUpgrade" class="secondary-button" type="button"><span>UPGRADE</span><small>強化へ</small></button></div>
       </section>
 
       <section id="moduleDraft" class="overlay module-draft" hidden aria-labelledby="moduleDraftTitle">
@@ -111,6 +113,13 @@
         <button id="closeHelp" type="button"><span>ゲームへ戻る</span><small>H / ESC</small></button>
       </section>
 
+      <section id="stageSelect" class="overlay stage-select" hidden aria-labelledby="stageSelectTitle">
+        <header><div><p class="eyebrow">ROUTE MAP // CAMPAIGN</p><h2 id="stageSelectTitle">挑戦ステージ選択</h2></div><p>クリアすると次のステージが解放されます。後半ほどウェーブ数・敵耐久・弾幕密度が上昇します。</p></header>
+        <div id="stageGrid" class="stage-grid"></div>
+        <section id="stageBriefing" class="stage-briefing" aria-live="polite"></section>
+        <div class="selector-footer"><span id="selectedStageLabel">STAGE 1 // VERDANT ROUTE</span><button id="closeStageSelect" type="button"><span>このルートで戻る</span><small>ESC</small></button></div>
+      </section>
+
       <section id="spriteSelect" class="overlay sprite-select" hidden aria-labelledby="spriteSelectTitle">
         <header>
           <div><p class="eyebrow">LOADOUT // SELECT</p><h2 id="spriteSelectTitle">出撃キャラクター</h2></div>
@@ -140,7 +149,7 @@
         <div class="selector-footer"><span id="selectedSpriteLabel">RAY // OUTFIT 07 FLUFF JACKET</span><button id="closeSpriteSelect" type="button"><span>この装備で戻る</span><small>ESC</small></button></div>
       </section>
 
-      <div id="pause" class="pause" hidden>PAUSED</div>
+      <div id="pause" class="pause" hidden><b>PAUSED</b><button id="resumeButton" type="button"><span>RESUME</span><small>P / ESC</small></button></div>
     </section>
     <footer><span>VERDANT ROUTE</span><i></i><span>AGGRESSION REWARDED</span></footer>
   </main>

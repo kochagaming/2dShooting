@@ -92,7 +92,7 @@ test("ウェーブ進行時に挑戦中限定のSYNC MODULEを選択できる", 
   assert.match(gameSource, /const RUN_MODULES=/);
   assert.match(gameSource, /function openModuleDraft\(\)/);
   assert.match(gameSource, /function chooseRunModule\(id\)/);
-  assert.match(gameSource, /next\.stageChanged\|\|state\.wave===2\|\|state\.wave===4/);
+  assert.match(gameSource, /next\.stageChanged\|\|\[2,4,6,8\]\.includes\(state\.wave\)/);
   assert.match(gameSource, /SYNC ×\$\{state\.modulePicks\}/);
 });
 
@@ -106,4 +106,105 @@ test("標準ゲームパッドで移動と全戦闘アクションを操作で�
   assert.match(gameSource, /rising\(2\).*"KeyX"/);
   assert.match(gameSource, /rising\(1\).*"KeyC"/);
   assert.match(gameSource, /rising\(3\).*"KeyQ"/);
+});
+
+test("SYNC MODULEで選択中の武器を個別に多重射撃化できる", () => {
+  const gameSource = readFileSync(resolve(root, "dist/js/game.js"), "utf8");
+  assert.match(gameSource, /const WEAPON_MODULES=/);
+  assert.match(gameSource, /AKIMBO LINK/);
+  assert.match(gameSource, /BREACH LOAD/);
+  assert.match(gameSource, /PRISM ARRAY/);
+  assert.match(gameSource, /SWARM RACK/);
+  assert.match(gameSource, /weaponBoosts:\{pistol:0,shotgun:0,laser:0,missile:0\}/);
+  assert.match(gameSource, /\+weaponBoost;/);
+  assert.match(gameSource, /damage:weapon\.damage\*character\.shotDamage\*\(1\+weaponBoost\*\.1\)/);
+});
+
+test("ボスの左右装甲を個別破壊して本体を露出できる", () => {
+  const gameSource = readFileSync(resolve(root, "dist/js/game.js"), "utf8");
+  assert.match(gameSource, /boss\.armorParts=\[/);
+  assert.match(gameSource, /name:"LEFT POD"/);
+  assert.match(gameSource, /name:"RIGHT POD"/);
+  assert.match(gameSource, /function damageBossPart\(enemy,part,amount\)/);
+  assert.match(gameSource, /amount\*=alive===2\?\.55:alive===1\?\.78:1/);
+  assert.match(gameSource, /ARMOR \$\{armorAlive\}\/2/);
+  assert.match(gameSource, /EXPOSED/);
+});
+
+test("挑戦ステージを選択し、クリアで次ステージとENDLESSを解放できる", () => {
+  const html = readFileSync(resolve(root, "dist/index.html"), "utf8");
+  const gameSource = readFileSync(resolve(root, "dist/js/game.js"), "utf8");
+  assert.match(html, /id="stageSelect"/);
+  assert.match(html, /id="stageGrid"/);
+  assert.match(gameSource, /function renderStageSelect\(\)/);
+  assert.match(gameSource, /index>profile\.unlockedStage/);
+  assert.match(gameSource, /unlockAfterStageClear\(profile\.unlockedStage,cleared\)/);
+  assert.match(gameSource, /profile\.endlessUnlocked=profile\.endlessUnlocked\|\|unlock\.endlessUnlocked/);
+  assert.match(gameSource, /ENDLESS DRIVE/);
+});
+
+test("ステージ別の最高ランク・スコア・クリアタイムを保存してルート画面に表示する", () => {
+  const gameSource = readFileSync(resolve(root, "dist/js/game.js"), "utf8");
+  assert.match(gameSource, /function blankStageRecords\(\)/);
+  assert.match(gameSource, /stageRecords:Object\.fromEntries/);
+  assert.match(gameSource, /updateRunRecord\(profile\.stageRecords\[state\.stageIndex\]/);
+  assert.match(gameSource, /STAGE SCORE/);
+  assert.match(gameSource, /record\.rank/);
+  assert.match(gameSource, /record\.clearTime/);
+});
+
+test("後半ステージに高速追尾HUNTERと全周弾BOMBERが出現する", () => {
+  const gameSource = readFileSync(resolve(root, "dist/js/game.js"), "utf8");
+  assert.match(gameSource, /hunter:\{hp:58/);
+  assert.match(gameSource, /bomber:\{hp:76/);
+  assert.match(gameSource, /enemy\.kind==="hunter"/);
+  assert.match(gameSource, /enemy\.kind==="bomber"/);
+  assert.match(gameSource, /for\(let i=0;i<8;i\+\+\)/);
+  assert.match(gameSource, /settings\.eliteChance/);
+});
+
+test("10体のステージボスが固有の弾幕パターンを持つ", () => {
+  const gameSource = readFileSync(resolve(root, "dist/js/game.js"), "utf8");
+  assert.match(gameSource, /variant=\(enemy\.variant\?\?0\)%BOSS_VARIANTS\.length/);
+  for(let variant=0;variant<10;variant++)assert.match(gameSource,new RegExp(`variant===${variant}`));
+  assert.match(gameSource, /const phase=enemy\.volley%3/);
+  assert.match(gameSource, /const openLane=enemy\.volley%5/);
+});
+
+test("装甲破壊後のボスは低HPでOVERLOADフェーズへ移行する", () => {
+  const gameSource = readFileSync(resolve(root, "dist/js/game.js"), "utf8");
+  assert.match(gameSource, /boss\.enraged=false/);
+  assert.match(gameSource, /armorAlive===0&&e\.hp\/e\.maxHp<=\.42/);
+  assert.match(gameSource, /PHASE SHIFT/);
+  assert.match(gameSource, /boss\.enraged\?`\$\{Math\.ceil\(ratio\*100\)\}% · OVERLOAD`/);
+  assert.match(gameSource, /enemy\.enraged\?1\.1:1/);
+});
+
+test("全15衣装が固有カラーの戦闘エフェクトを持つ", () => {
+  const gameSource = readFileSync(resolve(root, "dist/js/game.js"), "utf8");
+  assert.match(gameSource, /const OUTFIT_FX_COLORS=/);
+  assert.match(gameSource, /const playerAccent=/);
+  assert.equal((gameSource.match(/"[0-9]+":"#[0-9a-f]{6}"/gi)??[]).length,15);
+  assert.match(gameSource, /color:tier\.level===5\?"#c8ff2e":accent/);
+  assert.match(gameSource, /ctx\.strokeStyle=playerAccent\(\)/);
+});
+
+test("ステージ選択に脅威度・ギミック・ボス情報のブリーフィングがある", () => {
+  const html = readFileSync(resolve(root, "dist/index.html"), "utf8");
+  const gameSource = readFileSync(resolve(root, "dist/js/game.js"), "utf8");
+  assert.match(html, /id="stageBriefing"/);
+  assert.match(gameSource, /function renderStageBriefing\(\)/);
+  assert.match(gameSource, /THREAT \$\{selectedStage\+1\}\/10/);
+  assert.match(gameSource, /stage\.hazard/);
+  assert.match(gameSource, /boss\.name/);
+});
+
+test("スマートフォンから一時停止して画面内ボタンで再開できる", () => {
+  const html = readFileSync(resolve(root, "dist/index.html"), "utf8");
+  const gameSource = readFileSync(resolve(root, "dist/js/game.js"), "utf8");
+  assert.match(html, /id="touchPause"/);
+  assert.match(html, /id="resumeButton"/);
+  assert.match(gameSource, /function setPaused\(paused\)/);
+  assert.match(gameSource, /ui\.touchPause\?\.addEventListener\("pointerdown"/);
+  assert.match(gameSource, /ui\.resumeButton\.addEventListener\("click"/);
 });

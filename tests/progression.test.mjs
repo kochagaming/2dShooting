@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { applyUpgrades, applyOutfitModifiers, upgradeCost, waveSettings, chooseEnemyType, advanceWave, isRunClear, applyEscapePenalty, updateRunRecord, runRank, STAGES, WEAPONS, BOSS_VARIANTS, pickRunContract, contractProgress } from "../dist/js/progression.js";
+import { applyUpgrades, applyOutfitModifiers, upgradeCost, waveSettings, chooseEnemyType, advanceWave, isRunClear, unlockAfterStageClear, applyEscapePenalty, updateRunRecord, runRank, STAGES, WEAPONS, BOSS_VARIANTS, pickRunContract, contractProgress } from "../dist/js/progression.js";
 
 test("恒久強化がキャラクター性能へ反映される",()=>{
   const base={hp:100,speed:1,fireRate:1,shotDamage:1,slashRange:1,slashDamage:1,dashSpeed:1,dashCooldown:1};
@@ -18,22 +18,30 @@ test("強化コストと最大レベルを正しく返す",()=>{
   assert.equal(upgradeCost(0),4);assert.equal(upgradeCost(3),16);assert.equal(upgradeCost(5),null);
 });
 
-test("ステージとウェーブ進行で敵が強化される",()=>{
-  const first=waveSettings(0,1,0),late=waveSettings(2,5,1);
+test("ステージとウェーブ進行で敵が徐々に強化される",()=>{
+  const first=waveSettings(0,1,0),late=waveSettings(9,10,1);
   assert.ok(late.hpScale>first.hpScale);assert.ok(late.fireScale>first.fireScale);assert.ok(late.spawnInterval<first.spawnInterval);
+  assert.equal(first.eliteChance,0);assert.ok(late.eliteChance>.25);
   assert.equal(chooseEnemyType({grunt:.2,spread:.3,sniper:.5},.1),"grunt");assert.equal(chooseEnemyType({grunt:.2,spread:.3,sniper:.5},.35),"spread");assert.equal(chooseEnemyType({grunt:.2,spread:.3,sniper:.5},.9),"sniper");
 });
 
-test("5ウェーブ後に次ステージへ進み、3ステージ後に周回する",()=>{
-  assert.deepEqual(advanceWave(0,2,0),{stageIndex:0,wave:3,loop:0,stageChanged:false});
-  assert.deepEqual(advanceWave(2,5,0),{stageIndex:0,wave:1,loop:1,stageChanged:true});
-  assert.equal(isRunClear(2,5,0),true);assert.equal(isRunClear(2,5,1),false);
+test("ステージ番号に応じて1～10ウェーブへ増え、10ステージ後に周回する",()=>{
+  assert.deepEqual(STAGES.map(stage=>stage.waveCount),[1,2,3,4,5,6,7,8,9,10]);
+  assert.deepEqual(advanceWave(1,1,0),{stageIndex:1,wave:2,loop:0,stageChanged:false});
+  assert.deepEqual(advanceWave(9,10,0),{stageIndex:0,wave:1,loop:1,stageChanged:true});
+  assert.equal(isRunClear(9,10,0),true);assert.equal(isRunClear(9,10,1),false);
 });
 
-test("各ステージに5つの道路イベントがあり、4武器を切り替えられる",()=>{
-  assert.equal(STAGES.length,3);assert.ok(STAGES.every(stage=>stage.events.length===5));
+test("10ステージのイベント数が各ウェーブ数と一致し、4武器を切り替えられる",()=>{
+  assert.equal(STAGES.length,10);assert.ok(STAGES.every(stage=>stage.events.length===stage.waveCount));assert.ok(STAGES.every(stage=>stage.hazard));
   assert.deepEqual(WEAPONS.map(weapon=>weapon.id),["pistol","shotgun","laser","missile"]);
-  assert.deepEqual(BOSS_VARIANTS.map(boss=>boss.id),["pursuer","dreadnought","whitefang"]);
+  assert.equal(BOSS_VARIANTS.length,10);
+});
+
+test("クリアした次のステージを解放し、STAGE 10クリアでENDLESSを解放する",()=>{
+  assert.deepEqual(unlockAfterStageClear(0,0),{unlockedStage:1,endlessUnlocked:false});
+  assert.deepEqual(unlockAfterStageClear(6,2),{unlockedStage:6,endlessUnlocked:false});
+  assert.deepEqual(unlockAfterStageClear(8,9),{unlockedStage:9,endlessUnlocked:true});
 });
 
 test("攻撃的でノーダメージな走行ほど高ランクになる",()=>{

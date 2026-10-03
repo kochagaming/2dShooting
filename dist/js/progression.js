@@ -9,9 +9,16 @@ export const UPGRADE_DEFS = {
 };
 
 export const STAGES = [
-  { name:"VERDANT ROUTE", subtitle:"風走る草原街道", duration:18, weights:{grunt:.56,spread:.29,sniper:.15}, density:1, events:["OPEN MEADOW","WIND FARM","STONE CROSSING","RAIN FRONT","PURSUER APPROACH"] },
-  { name:"RED WASTE", subtitle:"赤土の荒野回廊", duration:20, weights:{grunt:.24,spread:.58,sniper:.18}, density:1.14, events:["DRY FLATS","DUST TRAIL","CANYON GATE","SANDSTORM","PURSUER APPROACH"] },
-  { name:"FROSTLINE", subtitle:"吹雪の凍結路", duration:22, weights:{grunt:.24,spread:.22,sniper:.54}, density:1.25, events:["SNOW FIELD","PINE PASS","ICE GRID","WHITEOUT","PURSUER APPROACH"] }
+  { name:"VERDANT ROUTE",subtitle:"風走る草原街道",hazard:"TRAFFIC / BOOST RAMP",theme:0,duration:12,waveCount:1,weights:{grunt:.72,spread:.2,sniper:.08},density:.78,events:["PURSUER APPROACH"]},
+  { name:"SUNSET BYWAY",subtitle:"夕映えの高架道",hazard:"TRAFFIC / ROADBLOCK",theme:0,duration:12.5,waveCount:2,weights:{grunt:.6,spread:.28,sniper:.12},density:.86,events:["GOLDEN FIELD","RAPTOR APPROACH"]},
+  { name:"RED WASTE",subtitle:"赤土の荒野回廊",hazard:"CANYON GATE",theme:1,duration:13,waveCount:3,weights:{grunt:.46,spread:.42,sniper:.12},density:.94,events:["DRY FLATS","DUST TRAIL","DREADNOUGHT APPROACH"]},
+  { name:"CANYON VEIN",subtitle:"峡谷を裂く輸送路",hazard:"NARROW CANYON GATE",theme:1,duration:13.5,waveCount:4,weights:{grunt:.38,spread:.45,sniper:.17},density:1.02,events:["RAVINE ENTRY","ROCKFALL","NARROW PASS","GOLIATH APPROACH"]},
+  { name:"FROSTLINE",subtitle:"吹雪の凍結路",hazard:"MOVING ICE GRID",theme:2,duration:14,waveCount:5,weights:{grunt:.4,spread:.25,sniper:.35},density:1.08,events:["SNOW FIELD","PINE PASS","FROZEN LAKE","ICE GRID","WHITE FANG APPROACH"]},
+  { name:"GLACIER SPAN",subtitle:"氷河上の崩壊橋",hazard:"ICE GRID / WHITEOUT",theme:2,duration:14,waveCount:6,weights:{grunt:.32,spread:.25,sniper:.43},density:1.14,events:["ICE SHELF","CREVASSE","FROST BRIDGE","AURORA LINE","SHARD FIELD","BOREALIS APPROACH"]},
+  { name:"STORM BELT",subtitle:"雷雲を貫く外環",hazard:"TRAFFIC / BLACK RAIN",theme:0,duration:14.5,waveCount:7,weights:{grunt:.42,spread:.34,sniper:.24},density:1.2,events:["DARK MEADOW","POWER LINE","THUNDER ROAD","FLASH FLOOD","WIND SHEAR","BLACK RAIN","TEMPEST APPROACH"]},
+  { name:"ASH CIRCUIT",subtitle:"灰都の灼熱環状線",hazard:"FURNACE GATE / ASH",theme:1,duration:15,waveCount:8,weights:{grunt:.28,spread:.5,sniper:.22},density:1.27,events:["ASH PLAIN","SMELTER WAY","EMBER RAIN","MOLTEN CUT","BLACK FACTORY","HEAT HAZE","FURNACE GATE","INFERNO APPROACH"]},
+  { name:"ZERO HORIZON",subtitle:"極夜の最終防衛線",hazard:"ICE GRID / POLAR NIGHT",theme:2,duration:15.5,waveCount:9,weights:{grunt:.28,spread:.27,sniper:.45},density:1.34,events:["POLAR NIGHT","SILENT GRID","GHOST CONVOY","DARK ICE","SIGNAL LOST","VOID BRIDGE","ABSOLUTE ZERO","BLACKOUT","NEMESIS APPROACH"]},
+  { name:"LAST ARTERY",subtitle:"中央都市への最終動脈",hazard:"LOCKDOWN GATE",theme:1,duration:16,waveCount:10,weights:{grunt:.34,spread:.36,sniper:.3},density:1.42,events:["OUTER WALL","DEFENSE GRID","WARDEN LINE","KILL ZONE","CENTRAL RAMP","LOCKDOWN","INNER RING","CORE HIGHWAY","FINAL GATE","OMEGA APPROACH"]}
 ];
 
 export const WEAPONS = [
@@ -29,8 +36,15 @@ export const RUN_CONTRACTS = [
 
 export const BOSS_VARIANTS = [
   { id:"pursuer", name:"PURSUER // ROAD HUNTER", color:"#ff315f" },
+  { id:"raptor", name:"RAPTOR // SUNSET CLAW", color:"#ffcf5a" },
   { id:"dreadnought", name:"DREADNOUGHT // DUST TYRANT", color:"#ff9f3d" },
-  { id:"whitefang", name:"WHITE FANG // ICE STALKER", color:"#83d9ff" }
+  { id:"goliath", name:"GOLIATH // CANYON CRUSHER", color:"#ff684d" },
+  { id:"whitefang", name:"WHITE FANG // ICE STALKER", color:"#83d9ff" },
+  { id:"borealis", name:"BOREALIS // GLACIER EYE", color:"#b99cff" },
+  { id:"tempest", name:"TEMPEST // STORM LANCER", color:"#c8ff2e" },
+  { id:"inferno", name:"INFERNO // ASH DEVOURER", color:"#ff4d75" },
+  { id:"nemesis", name:"NEMESIS // ZERO PHANTOM", color:"#79d7ff" },
+  { id:"omega", name:"OMEGA WARDEN // LAST WALL", color:"#ffffff" }
 ];
 
 export function pickRunContract(roll=Math.random()){
@@ -67,13 +81,14 @@ export function applyOutfitModifiers(stats,modifiers={}){
 }
 
 export function waveSettings(stageIndex,wave,loop=0){
-  const stage=STAGES[stageIndex%STAGES.length], w=Math.max(1,Math.min(5,wave));
+  const stage=STAGES[stageIndex%STAGES.length], w=Math.max(1,Math.min(stage.waveCount,wave));
   return {
     stage,
-    hpScale:1+stageIndex*.16+(w-1)*.085+loop*.34,
-    fireScale:1+stageIndex*.1+(w-1)*.055+loop*.18,
-    spawnInterval:Math.max(.3,(1.12-(w-1)*.095-loop*.08)/stage.density),
-    groupChance:Math.min(.72,.12+(w-1)*.1+stageIndex*.08+loop*.08),
+    hpScale:.78+stageIndex*.13+(w-1)*.055+loop*.32,
+    fireScale:.72+stageIndex*.085+(w-1)*.04+loop*.18,
+    spawnInterval:Math.max(.3,(1.32-(w-1)*.06-loop*.07)/stage.density),
+    groupChance:Math.min(.78,.05+(w-1)*.065+stageIndex*.045+loop*.08),
+    eliteChance:stageIndex<2?0:Math.min(.38,.04+(stageIndex-2)*.035+(w-1)*.012+loop*.04),
     weights:stage.weights
   };
 }
@@ -85,13 +100,19 @@ export function chooseEnemyType(weights,roll){
 }
 
 export function advanceWave(stageIndex,wave,loop=0){
-  if(wave<5)return {stageIndex,wave:wave+1,loop,stageChanged:false};
+  const waveCount=STAGES[stageIndex%STAGES.length].waveCount;
+  if(wave<waveCount)return {stageIndex,wave:wave+1,loop,stageChanged:false};
   const nextStage=(stageIndex+1)%STAGES.length;
   return {stageIndex:nextStage,wave:1,loop:nextStage===0?loop+1:loop,stageChanged:true};
 }
 
 export function isRunClear(stageIndex,wave,loop=0){
-  return stageIndex===STAGES.length-1&&wave===5&&loop===0;
+  return stageIndex===STAGES.length-1&&wave===STAGES.at(-1).waveCount&&loop===0;
+}
+
+export function unlockAfterStageClear(unlockedStage,clearedStage){
+  const cleared=Math.max(0,Math.min(STAGES.length-1,Math.floor(Number(clearedStage)||0)));
+  return {unlockedStage:Math.max(Math.max(0,Math.floor(Number(unlockedStage)||0)),Math.min(STAGES.length-1,cleared+1)),endlessUnlocked:cleared===STAGES.length-1};
 }
 
 export function applyEscapePenalty(boost,count=1){
