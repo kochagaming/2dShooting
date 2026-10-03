@@ -24,21 +24,21 @@ let selectorWasPaused = false;
 let selectionRearView = false;
 let combatFocus=(()=>{try{return localStorage.getItem("velocityBreakerCombatFocus")==="1"}catch{return false}})();
 const CHARACTERS = {
-  ray: { name:"RAY", jp:"レイ", role:"BALANCED", code:"ESCAPED SUBJECT // 07", meta:"BALANCED BOOST FIGHTER", description:"都市警備組織から逃亡した元実験体。BOOST DRIVEで射撃と斬撃を自在につなぐ万能型。", hp:100, speed:1, fireRate:1, shotDamage:1, bulletSpeed:1, dashSpeed:1, dashDuration:1, dashCooldown:1, slashRange:1, slashDamage:1, slashCooldown:1, accent:"#00f0ff", defaultOutfit:"7", outfits:[
+  ray: { name:"RAY", jp:"レイ", role:"BALANCED", code:"ESCAPED SUBJECT // 07", meta:"BALANCED BOOST FIGHTER", topArt:"./assets/ray-key-art.png", description:"都市警備組織から逃亡した元実験体。BOOST DRIVEで射撃と斬撃を自在につなぐ万能型。", hp:100, speed:1, fireRate:1, shotDamage:1, bulletSpeed:1, dashSpeed:1, dashDuration:1, dashCooldown:1, slashRange:1, slashDamage:1, slashCooldown:1, accent:"#00f0ff", defaultOutfit:"7", outfits:[
     {id:"1",name:"SCOUT BOB",note:"丸いボブ＋軽装",front:"./assets/characters/ray/front-01.png",rear:"./assets/ray-options/ray-01.png"},
     {id:"4",name:"SUBJECT ZERO",note:"ピクシー＋実験体",front:"./assets/characters/ray/front-04.png",rear:"./assets/ray-options/ray-04.png"},
     {id:"7",name:"FLUFF JACKET",note:"ふわ髪＋大きめ上着",front:"./assets/characters/ray/front-07.png",rear:"./assets/ray-options/ray-07.png"},
     {id:"8",name:"LIGHT KNIGHT",note:"長髪＋騎士装甲",front:"./assets/characters/ray/front-08.png",rear:"./assets/ray-options/ray-08.png"},
     {id:"10",name:"NEON COURIER",note:"ポニー＋スポーツ",front:"./assets/characters/ray/front-10.png",rear:"./assets/ray-options/ray-10.png"}
   ]},
-  mira: { name:"MIRA", jp:"ミラ", role:"HEAVY GUNNER", code:"WARDEN DEFECTOR // 02", meta:"ARMORED MARKSMAN", description:"都市警備隊を離反した重装射手。機動力と斬撃を犠牲に、高耐久と高威力射撃で敵を粉砕する。", hp:135, speed:.84, fireRate:.78, shotDamage:1.58, bulletSpeed:1.08, dashSpeed:.86, dashDuration:.92, dashCooldown:1.12, slashRange:.78, slashDamage:.88, slashCooldown:1.1, accent:"#ffb43f", defaultOutfit:"1", outfits:[
+  mira: { name:"MIRA", jp:"ミラ", role:"HEAVY GUNNER", code:"WARDEN DEFECTOR // 02", meta:"ARMORED MARKSMAN", topArt:"./assets/characters/mira-front.png?v=front2", description:"都市警備隊を離反した重装射手。機動力と斬撃を犠牲に、高耐久と高威力射撃で敵を粉砕する。", hp:135, speed:.84, fireRate:.78, shotDamage:1.58, bulletSpeed:1.08, dashSpeed:.86, dashDuration:.92, dashCooldown:1.12, slashRange:.78, slashDamage:.88, slashCooldown:1.1, accent:"#ffb43f", defaultOutfit:"1", outfits:[
     {id:"1",name:"WARDEN BREAKER",note:"白橙の制圧装甲",front:"./assets/characters/mira/front-01.png",rear:"./assets/characters/mira/rear-01.png"},
     {id:"2",name:"BASTION WHITE",note:"要塞型ホワイト装甲",front:"./assets/characters/mira/front-02.png",rear:"./assets/characters/mira/rear-02.png"},
     {id:"3",name:"SIEGE BLACK",note:"黒金の攻城装甲",front:"./assets/characters/mira/front-03.png",rear:"./assets/characters/mira/rear-03.png"},
     {id:"4",name:"DESERT AEGIS",note:"荒野用フィールド装甲",front:"./assets/characters/mira/front-04.png",rear:"./assets/characters/mira/rear-04.png"},
     {id:"5",name:"ARCTIC BULWARK",note:"氷雪用シアン装甲",front:"./assets/characters/mira/front-05.png",rear:"./assets/characters/mira/rear-05.png"}
   ]},
-  lyn: { name:"LYN", jp:"リン", role:"INTERCEPTOR", code:"STREET UNIT // 13", meta:"CLOSE-RANGE INTERCEPTOR", description:"違法レース育ちの高速迎撃手。低耐久だが、最速のダッシュと巨大ブレードで弾幕の懐へ潜り込む。", hp:80, speed:1.17, fireRate:1.18, shotDamage:.78, bulletSpeed:.96, dashSpeed:1.2, dashDuration:1.13, dashCooldown:.82, slashRange:1.3, slashDamage:1.22, slashCooldown:.82, accent:"#ff55a5", defaultOutfit:"1", outfits:[
+  lyn: { name:"LYN", jp:"リン", role:"INTERCEPTOR", code:"STREET UNIT // 13", meta:"CLOSE-RANGE INTERCEPTOR", topArt:"./assets/characters/lyn-front.png?v=front2", description:"違法レース育ちの高速迎撃手。低耐久だが、最速のダッシュと巨大ブレードで弾幕の懐へ潜り込む。", hp:80, speed:1.17, fireRate:1.18, shotDamage:.78, bulletSpeed:.96, dashSpeed:1.2, dashDuration:1.13, dashCooldown:.82, slashRange:1.3, slashDamage:1.22, slashCooldown:.82, accent:"#ff55a5", defaultOutfit:"1", outfits:[
     {id:"1",name:"STREET COMET",note:"ネオン街の軽量装備",front:"./assets/characters/lyn/front-01.png",rear:"./assets/characters/lyn/rear-01.png"},
     {id:"2",name:"RAZOR PUNK",note:"マゼンタの反逆装備",front:"./assets/characters/lyn/front-02.png",rear:"./assets/characters/lyn/rear-02.png"},
     {id:"3",name:"NEON KUNOICHI",note:"忍装束型スピード装備",front:"./assets/characters/lyn/front-03.png",rear:"./assets/characters/lyn/rear-03.png"},
@@ -81,7 +81,7 @@ function updateSpriteSelection() {
   document.querySelectorAll(".character-card").forEach(card=>{const cardCharacter=CHARACTERS[card.dataset.character],cardOutfit=cardCharacter.outfits.find(o=>o.id===selectedOutfits[card.dataset.character])??cardCharacter.outfits[0],image=card.querySelector("img");card.setAttribute("aria-checked",String(card.dataset.character===selectedCharacter));image.src=selectionRearView?cardOutfit.rear:cardOutfit.front;image.alt=`${cardCharacter.jp}の${selectionRearView?"ゲーム中の背面":"正面全身"}`});
   document.querySelectorAll(".sprite-card").forEach(card=>card.setAttribute("aria-checked",String(card.dataset.outfit===outfit.id)));
   ui.selectedSpriteLabel.textContent=`${c.name} // OUTFIT ${String(outfit.id).toUpperCase()} ${outfit.name}`;
-  ui.keyartImage.src=outfit.front;ui.keyartImage.alt=`${c.jp} ${outfit.name}の正面キャラクターアート`;ui.characterName.textContent=c.name;ui.characterCode.textContent=c.code;ui.characterMeta.textContent=c.meta;
+  ui.keyartImage.src=c.topArt;ui.keyartImage.alt=`${c.jp}のトップページ専用キャラクターアート`;ui.characterName.textContent=c.name;ui.characterCode.textContent=c.code;ui.characterMeta.textContent=c.meta;
   ui.characterLead.innerHTML=`<strong>${c.jp}</strong> — ${c.description}`;
   ui.bankCore.textContent=profile.cores;ui.upgradeCore.textContent=profile.cores;
   const record=profile.records[selectedCharacter],bestTime=record.clearTime?`${String(Math.floor(record.clearTime/60)).padStart(2,"0")}:${String(Math.floor(record.clearTime%60)).padStart(2,"0")}`:"--:--";ui.bestRecord.innerHTML=`PERSONAL BEST // <b>${record.rank}</b>　${String(record.score).padStart(6,"0")}　CLEAR ${bestTime}　×${record.clears}`;

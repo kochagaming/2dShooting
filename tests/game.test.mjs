@@ -40,3 +40,12 @@ test("3キャラクターに正面・背面の5衣装があり表示切替UIを�
   assert.match(html, /id="toggleCharacterView"/);
   assert.match(html, /id="toggleOutfitView"/);
 });
+
+test("トップ画像は衣装の正面・背面画像と分離されている", () => {
+  const gameSource = readFileSync(resolve(root, "dist/js/game.js"), "utf8");
+  assert.match(gameSource, /topArt:"\.\/assets\/ray-key-art\.png"/);
+  assert.match(gameSource, /topArt:"\.\/assets\/characters\/mira-front\.png/);
+  assert.match(gameSource, /topArt:"\.\/assets\/characters\/lyn-front\.png/);
+  assert.match(gameSource, /ui\.keyartImage\.src=c\.topArt/);
+  assert.doesNotMatch(gameSource, /ui\.keyartImage\.src=outfit\.front/);
+});
