@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { applyUpgrades, applyOutfitModifiers, upgradeCost, waveSettings, chooseEnemyType, advanceWave, isRunClear, unlockAfterStageClear, applyEscapePenalty, updateRunRecord, runRank, STAGES, WEAPONS, BOSS_VARIANTS, pickRunContract, contractProgress } from "../dist/js/progression.js";
+import { applyUpgrades, applyOutfitModifiers, upgradeCost, weaponUpgradeCost, weaponUpgradeStats, waveSettings, chooseEnemyType, advanceWave, isRunClear, unlockAfterStageClear, applyEscapePenalty, updateRunRecord, runRank, styleAward, STAGES, WEAPONS, BOSS_VARIANTS, pickRunContract, contractProgress } from "../dist/js/progression.js";
 
 test("恒久強化がキャラクター性能へ反映される",()=>{
   const base={hp:100,speed:1,fireRate:1,shotDamage:1,slashRange:1,slashDamage:1,dashSpeed:1,dashCooldown:1};
@@ -16,6 +16,12 @@ test("衣装固有チューニングが出撃性能へ反映される",()=>{
 
 test("強化コストと最大レベルを正しく返す",()=>{
   assert.equal(upgradeCost(0),4);assert.equal(upgradeCost(3),16);assert.equal(upgradeCost(5),null);
+});
+
+test("武器マスタリーが威力と連射速度を恒久強化する",()=>{
+  assert.equal(weaponUpgradeCost(0),6);assert.equal(weaponUpgradeCost(4),26);assert.equal(weaponUpgradeCost(5),null);
+  assert.deepEqual(weaponUpgradeStats(0),{damage:1,fireRate:1});
+  assert.deepEqual(weaponUpgradeStats(5),{damage:1.3,fireRate:1.15});
 });
 
 test("ステージとウェーブ進行で敵が徐々に強化される",()=>{
@@ -47,6 +53,14 @@ test("クリアした次のステージを解放し、STAGE 10クリアでENDLES
 test("攻撃的でノーダメージな走行ほど高ランクになる",()=>{
   assert.equal(runRank({score:15000,kills:30,near:24,dashNear:12,damage:0,maxCombo:25}),"S");
   assert.equal(runRank({score:300,kills:1,near:0,dashNear:0,damage:5,maxCombo:1}),"D");
+});
+
+test("危険へ踏み込むプレイにSTYLE AWARDと追加報酬を与える",()=>{
+  assert.deepEqual(styleAward({near:14,damage:0}),{id:"no-fear",label:"NO FEAR",description:"ノーダメージで弾幕へ接近",bonus:3});
+  assert.equal(styleAward({justDodge:5,damage:2}).id,"razor-edge");
+  assert.equal(styleAward({strongKills:7,damage:3}).id,"blade-storm");
+  assert.equal(styleAward({overdriveTime:9,damage:3}).id,"redline");
+  assert.equal(styleAward({}).bonus,0);
 });
 
 test("RUN ORDERを選び、進捗と達成を判定できる",()=>{

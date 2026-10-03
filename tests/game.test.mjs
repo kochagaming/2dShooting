@@ -69,6 +69,18 @@ test("ダッシュ斬り撃破後に次の敵へ連鎖できる", () => {
   assert.match(gameSource, /SPACE \/\/ CHAIN/);
 });
 
+test("ダッシュ・斬撃・スライドの再使用状況をHUDとタッチボタンへ表示する", () => {
+  const html = readFileSync(resolve(root, "dist/index.html"), "utf8");
+  const gameSource = readFileSync(resolve(root, "dist/js/game.js"), "utf8");
+  assert.match(html, /class="action-ready"/);
+  assert.match(html, /id="dashReadyBar"/);
+  assert.match(html, /id="slashReadyBar"/);
+  assert.match(html, /id="slideReadyBar"/);
+  assert.match(gameSource, /const actionReadiness=/);
+  assert.match(gameSource, /remaining\.toFixed\(2\)/);
+  assert.match(gameSource, /classList\.toggle\("cooling",!ready\)/);
+});
+
 test("スマートフォン用の移動・戦闘操作と自動照準を備える", () => {
   const html = readFileSync(resolve(root, "dist/index.html"), "utf8");
   const css = readFileSync(resolve(root, "dist/styles.css"), "utf8");
@@ -82,6 +94,32 @@ test("スマートフォン用の移動・戦闘操作と自動照準を備え�
   assert.match(gameSource, /classList\.add\("touch-enabled"\)/);
   assert.match(gameSource, /else if\(input\.touchShoot\)/);
   assert.match(gameSource, /state\.enemies/);
+});
+
+test("射撃・ダッシュ・斬撃・スライド・武器切替をキー設定できる", () => {
+  const html = readFileSync(resolve(root, "dist/index.html"), "utf8");
+  const gameSource = readFileSync(resolve(root, "dist/js/game.js"), "utf8");
+  assert.match(html, /id="keyConfigGrid"/);
+  assert.match(html, /id="resetKeys"/);
+  assert.match(gameSource, /const DEFAULT_KEYS=\{shoot:"KeyZ",dash:"Space",slash:"KeyX",slide:"KeyC",weapon:"KeyQ"\}/);
+  assert.match(gameSource, /localStorage\.setItem\("velocityBreakerKeys"/);
+  assert.match(gameSource, /actionKeys\.dash/);
+  assert.match(gameSource, /actionKeys\.shoot/);
+  assert.match(gameSource, /TouchDash/);
+  assert.match(gameSource, /PadDash/);
+});
+
+test("背景抑制・画面揺れ・被弾フラッシュを個別設定できる", () => {
+  const html = readFileSync(resolve(root, "dist/index.html"), "utf8");
+  const gameSource = readFileSync(resolve(root, "dist/js/game.js"), "utf8");
+  assert.match(html, /id="settingFocus"/);
+  assert.match(html, /id="settingShake"/);
+  assert.match(html, /id="settingFlash"/);
+  assert.match(gameSource, /velocityBreakerShake/);
+  assert.match(gameSource, /velocityBreakerFlash/);
+  assert.match(gameSource, /function toggleVisualSetting\(setting\)/);
+  assert.match(gameSource, /shakeScale=shakeEnabled\?focusScale:0/);
+  assert.match(gameSource, /if\(flashEnabled&&state\.flash>0\)/);
 });
 
 test("ウェーブ進行時に挑戦中限定のSYNC MODULEを選択できる", () => {
@@ -103,9 +141,9 @@ test("標準ゲームパッドで移動と全戦闘アクションを操作で�
   assert.match(gameSource, /input\.gamepadX/);
   assert.match(gameSource, /input\.gamepadShoot/);
   assert.match(gameSource, /rising\(4\)\|\|rising\(5\)/);
-  assert.match(gameSource, /rising\(2\).*"KeyX"/);
-  assert.match(gameSource, /rising\(1\).*"KeyC"/);
-  assert.match(gameSource, /rising\(3\).*"KeyQ"/);
+  assert.match(gameSource, /rising\(2\).*"PadSlash"/);
+  assert.match(gameSource, /rising\(1\).*"PadSlide"/);
+  assert.match(gameSource, /rising\(3\).*"PadWeapon"/);
 });
 
 test("SYNC MODULEで選択中の武器を個別に多重射撃化できる", () => {
@@ -120,15 +158,63 @@ test("SYNC MODULEで選択中の武器を個別に多重射撃化できる", () 
   assert.match(gameSource, /damage:weapon\.damage\*character\.shotDamage\*\(1\+weaponBoost\*\.1\)/);
 });
 
+test("4武器をキャラクター共通の恒久マスタリーで強化できる", () => {
+  const html = readFileSync(resolve(root, "dist/index.html"), "utf8");
+  const gameSource = readFileSync(resolve(root, "dist/js/game.js"), "utf8");
+  assert.match(html, /id="weaponUpgradeGrid"/);
+  assert.match(gameSource, /weaponUpgrades:blankWeaponUpgrades\(\)/);
+  assert.match(gameSource, /function buyWeaponUpgrade\(key\)/);
+  assert.match(gameSource, /weaponMastery=weaponUpgradeStats/);
+  assert.match(gameSource, /\*weaponMastery\.damage/);
+  assert.match(gameSource, /\*weaponMastery\.fireRate/);
+  assert.match(html, /WEAPON MASTERY/);
+});
+
+test("ボス撃破でDRIVE CHIPを回収しキャラクター選択画面で装備できる", () => {
+  const html = readFileSync(resolve(root, "dist/index.html"), "utf8");
+  const gameSource = readFileSync(resolve(root, "dist/js/game.js"), "utf8");
+  assert.match(html, /id="chipGrid"/);
+  assert.match(html, /id="resultChip"/);
+  assert.match(gameSource, /const DRIVE_CHIPS=/);
+  assert.match(gameSource, /chips:\[\],equippedChips:/);
+  assert.match(gameSource, /function awardDriveChip\(stageIndex\)/);
+  assert.match(gameSource, /awardDriveChip\(cleared\)/);
+  assert.match(gameSource, /function equipChip\(chipId\)/);
+  assert.match(gameSource, /chip\?applyOutfitModifiers\(outfitStats,chip\.mods\)/);
+  assert.match(gameSource, /DUPLICATE .* CORE \+3/);
+});
+
+test("攻撃的な走りをSTYLE AWARDとしてリザルト報酬へ反映する", () => {
+  const html = readFileSync(resolve(root, "dist/index.html"), "utf8");
+  const gameSource = readFileSync(resolve(root, "dist/js/game.js"), "utf8");
+  assert.match(html, /id="styleAward"/);
+  assert.match(gameSource, /styleAwarded:false/);
+  assert.match(gameSource, /const style=styleAward\(state\.stats\)/);
+  assert.match(gameSource, /state\.runCores\+=style\.bonus/);
+  assert.match(gameSource, /STYLE \/\/ \$\{style\.label\}/);
+});
+
 test("ボスの左右装甲を個別破壊して本体を露出できる", () => {
   const gameSource = readFileSync(resolve(root, "dist/js/game.js"), "utf8");
   assert.match(gameSource, /boss\.armorParts=\[/);
   assert.match(gameSource, /name:"LEFT POD"/);
   assert.match(gameSource, /name:"RIGHT POD"/);
   assert.match(gameSource, /function damageBossPart\(enemy,part,amount\)/);
-  assert.match(gameSource, /amount\*=alive===2\?\.55:alive===1\?\.78:1/);
+  assert.match(gameSource, /amount\*=alive===2\?\.55:alive===1\?\.78:/);
   assert.match(gameSource, /ARMOR \$\{armorAlive\}\/2/);
-  assert.match(gameSource, /EXPOSED/);
+  assert.match(gameSource, /CORE OPEN/);
+});
+
+test("ボスの脚部破壊からダッシュ斬り弱点攻撃へつなげられる", () => {
+  const gameSource = readFileSync(resolve(root, "dist/js/game.js"), "utf8");
+  assert.match(gameSource, /boss\.legParts=\[/);
+  assert.match(gameSource, /name:"LEFT DRIVE"/);
+  assert.match(gameSource, /name:"RIGHT DRIVE"/);
+  assert.match(gameSource, /function damageBossLeg\(enemy,leg,amount\)/);
+  assert.match(gameSource, /enemy\.coreExposed=true/);
+  assert.match(gameSource, /CORE OPEN \/\/ DASH SLASH NOW/);
+  assert.match(gameSource, /enemy\.coreExposed&&strong\?2\.4:1/);
+  assert.match(gameSource, /CORE REND ×2\.4/);
 });
 
 test("挑戦ステージを選択し、クリアで次ステージとENDLESSを解放できる", () => {
@@ -176,7 +262,7 @@ test("装甲破壊後のボスは低HPでOVERLOADフェーズへ移行する", (
   assert.match(gameSource, /boss\.enraged=false/);
   assert.match(gameSource, /armorAlive===0&&e\.hp\/e\.maxHp<=\.42/);
   assert.match(gameSource, /PHASE SHIFT/);
-  assert.match(gameSource, /boss\.enraged\?`\$\{Math\.ceil\(ratio\*100\)\}% · OVERLOAD`/);
+  assert.match(gameSource, /CORE OPEN \/ OVERLOAD/);
   assert.match(gameSource, /enemy\.enraged\?1\.1:1/);
 });
 
@@ -207,4 +293,76 @@ test("スマートフォンから一時停止して画面内ボタンで再開�
   assert.match(gameSource, /function setPaused\(paused\)/);
   assert.match(gameSource, /ui\.touchPause\?\.addEventListener\("pointerdown"/);
   assert.match(gameSource, /ui\.resumeButton\.addEventListener\("click"/);
+});
+
+test("ポーズ画面から操作ガイドと設定を開いてポーズへ戻れる", () => {
+  const html = readFileSync(resolve(root, "dist/index.html"), "utf8");
+  const gameSource = readFileSync(resolve(root, "dist/js/game.js"), "utf8");
+  assert.match(html, /id="pauseHelp"/);
+  assert.match(html, /CONTROLS \/ SETTINGS/);
+  assert.match(gameSource, /ui\.pauseHelp\.addEventListener\("click",\(\)=>toggleHelp\(true\)\)/);
+  assert.match(gameSource, /helpWasPaused\s*=\s*state\.paused/);
+});
+
+test("出撃直後は3カウント中に敵とステージ時間が停止する", () => {
+  const html = readFileSync(resolve(root, "dist/index.html"), "utf8");
+  const gameSource = readFileSync(resolve(root, "dist/js/game.js"), "utf8");
+  assert.match(html, /id="launchCountdown"/);
+  assert.match(gameSource, /launchTimer:2\.25/);
+  assert.match(gameSource, /if\(state\.launchTimer>0\)/);
+  assert.match(gameSource, /ui\.launchCountdown\.hidden=true/);
+  assert.match(gameSource, /announce\("DRIVE!",true\)/);
+});
+
+test("最終ウェーブを走り切ってからボスが出現する", () => {
+  const gameSource = readFileSync(resolve(root, "dist/js/game.js"), "utf8");
+  assert.doesNotMatch(gameSource, /else if\(state\.wave===STAGES\[state\.stageIndex\]\.waveCount\)spawnBoss\(\)/);
+  assert.match(gameSource, /if\(state\.waveTime>=currentStage\.duration\)/);
+  assert.match(gameSource, /finalWave&&!bossAlive&&!bossAlreadySpawned/);
+  assert.match(gameSource, /spawnBoss\(\)/);
+  assert.match(gameSource, /!bossAlive&&bossAlreadySpawned&&state\.endless/);
+});
+
+test("次ウェーブまたはボス出現までの残り時間をHUDへ表示する", () => {
+  const html = readFileSync(resolve(root, "dist/index.html"), "utf8");
+  const gameSource = readFileSync(resolve(root, "dist/js/game.js"), "utf8");
+  assert.match(html, /id="waveProgressBar"/);
+  assert.match(html, /id="waveCountdown"/);
+  assert.match(gameSource, /waveRatio=clamp\(state\.waveTime\/stage\.duration,0,1\)/);
+  assert.match(gameSource, /remaining=Math\.max\(0,stage\.duration-state\.waveTime\)/);
+  assert.match(gameSource, /boss\?"BOSS ENGAGED"/);
+  assert.match(gameSource, /finalWave\?"BOSS":"NEXT WAVE"/);
+});
+
+test("被弾原因と飛来方向を短時間表示する", () => {
+  const gameSource = readFileSync(resolve(root, "dist/js/game.js"), "utf8");
+  assert.match(gameSource, /function hurtPlayer\(sourceX=/);
+  assert.match(gameSource, /damageMarker=\{sourceX,sourceY,reason/);
+  assert.match(gameSource, /function drawDamageMarker\(\)/);
+  assert.match(gameSource, /"ICE GRID":"CANYON GATE"/);
+  assert.match(gameSource, /`\$\{e\.kind\.toUpperCase\(\)\} CONTACT`/);
+  assert.match(gameSource, /"ENEMY FIRE"/);
+});
+
+test("後半ステージに左右の進路を選ぶ崩落道路が出現する", () => {
+  const gameSource = readFileSync(resolve(root, "dist/js/game.js"), "utf8");
+  const progressionSource = readFileSync(resolve(root, "dist/js/progression.js"), "utf8");
+  assert.match(gameSource, /state\.stageIndex>=5/);
+  assert.match(gameSource, /type:"roadSplit"/);
+  assert.match(gameSource, /safeSide/);
+  assert.match(gameSource, /ROAD COLLAPSE/);
+  assert.match(gameSource, /ROUTE THREAD \+8/);
+  assert.match(gameSource, /OPEN ROUTE/);
+  assert.match(progressionSource, /COLLAPSE FORK/);
+});
+
+test("BOOSTとボス状態でテンポが変わるプロシージャルBGMをミュートできる", () => {
+  const html = readFileSync(resolve(root, "dist/index.html"), "utf8");
+  const gameSource = readFileSync(resolve(root, "dist/js/game.js"), "utf8");
+  assert.match(html, /id="audioToggle"/);
+  assert.match(gameSource, /music\(dt,boost,boss=false,enraged=false\)/);
+  assert.match(gameSource, /overdrive=boost>=95/);
+  assert.match(gameSource, /enraged\?\.085:overdrive\?\.105:boss\?\.145:\.19/);
+  assert.match(gameSource, /localStorage\.setItem\("velocityBreakerSound"/);
+  assert.match(gameSource, /key==="KeyM"/);
 });

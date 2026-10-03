@@ -14,11 +14,11 @@ export const STAGES = [
   { name:"RED WASTE",subtitle:"赤土の荒野回廊",hazard:"CANYON GATE",theme:1,duration:13,waveCount:3,weights:{grunt:.46,spread:.42,sniper:.12},density:.94,events:["DRY FLATS","DUST TRAIL","DREADNOUGHT APPROACH"]},
   { name:"CANYON VEIN",subtitle:"峡谷を裂く輸送路",hazard:"NARROW CANYON GATE",theme:1,duration:13.5,waveCount:4,weights:{grunt:.38,spread:.45,sniper:.17},density:1.02,events:["RAVINE ENTRY","ROCKFALL","NARROW PASS","GOLIATH APPROACH"]},
   { name:"FROSTLINE",subtitle:"吹雪の凍結路",hazard:"MOVING ICE GRID",theme:2,duration:14,waveCount:5,weights:{grunt:.4,spread:.25,sniper:.35},density:1.08,events:["SNOW FIELD","PINE PASS","FROZEN LAKE","ICE GRID","WHITE FANG APPROACH"]},
-  { name:"GLACIER SPAN",subtitle:"氷河上の崩壊橋",hazard:"ICE GRID / WHITEOUT",theme:2,duration:14,waveCount:6,weights:{grunt:.32,spread:.25,sniper:.43},density:1.14,events:["ICE SHELF","CREVASSE","FROST BRIDGE","AURORA LINE","SHARD FIELD","BOREALIS APPROACH"]},
-  { name:"STORM BELT",subtitle:"雷雲を貫く外環",hazard:"TRAFFIC / BLACK RAIN",theme:0,duration:14.5,waveCount:7,weights:{grunt:.42,spread:.34,sniper:.24},density:1.2,events:["DARK MEADOW","POWER LINE","THUNDER ROAD","FLASH FLOOD","WIND SHEAR","BLACK RAIN","TEMPEST APPROACH"]},
-  { name:"ASH CIRCUIT",subtitle:"灰都の灼熱環状線",hazard:"FURNACE GATE / ASH",theme:1,duration:15,waveCount:8,weights:{grunt:.28,spread:.5,sniper:.22},density:1.27,events:["ASH PLAIN","SMELTER WAY","EMBER RAIN","MOLTEN CUT","BLACK FACTORY","HEAT HAZE","FURNACE GATE","INFERNO APPROACH"]},
-  { name:"ZERO HORIZON",subtitle:"極夜の最終防衛線",hazard:"ICE GRID / POLAR NIGHT",theme:2,duration:15.5,waveCount:9,weights:{grunt:.28,spread:.27,sniper:.45},density:1.34,events:["POLAR NIGHT","SILENT GRID","GHOST CONVOY","DARK ICE","SIGNAL LOST","VOID BRIDGE","ABSOLUTE ZERO","BLACKOUT","NEMESIS APPROACH"]},
-  { name:"LAST ARTERY",subtitle:"中央都市への最終動脈",hazard:"LOCKDOWN GATE",theme:1,duration:16,waveCount:10,weights:{grunt:.34,spread:.36,sniper:.3},density:1.42,events:["OUTER WALL","DEFENSE GRID","WARDEN LINE","KILL ZONE","CENTRAL RAMP","LOCKDOWN","INNER RING","CORE HIGHWAY","FINAL GATE","OMEGA APPROACH"]}
+  { name:"GLACIER SPAN",subtitle:"氷河上の崩壊橋",hazard:"COLLAPSE FORK / ICE GRID",theme:2,duration:14,waveCount:6,weights:{grunt:.32,spread:.25,sniper:.43},density:1.14,events:["ICE SHELF","CREVASSE","FROST BRIDGE","AURORA LINE","SHARD FIELD","BOREALIS APPROACH"]},
+  { name:"STORM BELT",subtitle:"雷雲を貫く外環",hazard:"COLLAPSE FORK / BLACK RAIN",theme:0,duration:14.5,waveCount:7,weights:{grunt:.42,spread:.34,sniper:.24},density:1.2,events:["DARK MEADOW","POWER LINE","THUNDER ROAD","FLASH FLOOD","WIND SHEAR","BLACK RAIN","TEMPEST APPROACH"]},
+  { name:"ASH CIRCUIT",subtitle:"灰都の灼熱環状線",hazard:"COLLAPSE FORK / FURNACE GATE",theme:1,duration:15,waveCount:8,weights:{grunt:.28,spread:.5,sniper:.22},density:1.27,events:["ASH PLAIN","SMELTER WAY","EMBER RAIN","MOLTEN CUT","BLACK FACTORY","HEAT HAZE","FURNACE GATE","INFERNO APPROACH"]},
+  { name:"ZERO HORIZON",subtitle:"極夜の最終防衛線",hazard:"COLLAPSE FORK / ICE GRID",theme:2,duration:15.5,waveCount:9,weights:{grunt:.28,spread:.27,sniper:.45},density:1.34,events:["POLAR NIGHT","SILENT GRID","GHOST CONVOY","DARK ICE","SIGNAL LOST","VOID BRIDGE","ABSOLUTE ZERO","BLACKOUT","NEMESIS APPROACH"]},
+  { name:"LAST ARTERY",subtitle:"中央都市への最終動脈",hazard:"COLLAPSE FORK / LOCKDOWN",theme:1,duration:16,waveCount:10,weights:{grunt:.34,spread:.36,sniper:.3},density:1.42,events:["OUTER WALL","DEFENSE GRID","WARDEN LINE","KILL ZONE","CENTRAL RAMP","LOCKDOWN","INNER RING","CORE HIGHWAY","FINAL GATE","OMEGA APPROACH"]}
 ];
 
 export const WEAPONS = [
@@ -27,6 +27,22 @@ export const WEAPONS = [
   { id:"laser", label:"LASER", short:"LS", fireDelay:.058, damage:4.4, speed:1320 },
   { id:"missile", label:"MISSILE", short:"MS", fireDelay:.48, damage:30, speed:470 }
 ];
+
+export const WEAPON_UPGRADE_KEYS = WEAPONS.map(weapon=>weapon.id);
+
+export const WEAPON_UPGRADE_DEFS = {
+  pistol:{label:"HANDGUN LINK",jp:"ハンドガン",description:"威力 +6% / 連射 +3%"},
+  shotgun:{label:"BREACH CHAMBER",jp:"ショットガン",description:"威力 +6% / 連射 +3%"},
+  laser:{label:"PRISM CORE",jp:"レーザー",description:"威力 +6% / 連射 +3%"},
+  missile:{label:"SWARM GUIDANCE",jp:"ミサイル",description:"威力 +6% / 連射 +3%"}
+};
+
+export function weaponUpgradeCost(level){return level>=5?null:6+level*5;}
+
+export function weaponUpgradeStats(level=0){
+  const lv=Math.max(0,Math.min(5,Number(level)||0));
+  return {damage:1+lv*.06,fireRate:1+lv*.03};
+}
 
 export const RUN_CONTRACTS = [
   { id:"grazer", label:"GRAZE ORDER", stat:"near", target:15, reward:3 },
@@ -133,4 +149,14 @@ export function runRank({score=0,kills=0,near=0,dashNear=0,damage=0,maxCombo=0}=
   if(performance>=5500)return "B";
   if(performance>=2200)return "C";
   return "D";
+}
+
+export function styleAward(stats={}){
+  const near=Math.max(0,Number(stats.near)||0),damage=Math.max(0,Number(stats.damage)||0),justDodge=Math.max(0,Number(stats.justDodge)||0),strongKills=Math.max(0,Number(stats.strongKills)||0),overdriveTime=Math.max(0,Number(stats.overdriveTime)||0),hazardDodges=Math.max(0,Number(stats.hazardDodges)||0);
+  if(damage===0&&near>=12)return{id:"no-fear",label:"NO FEAR",description:"ノーダメージで弾幕へ接近",bonus:3};
+  if(justDodge>=4)return{id:"razor-edge",label:"RAZOR EDGE",description:`JUST DODGE ×${Math.floor(justDodge)}`,bonus:2};
+  if(strongKills>=6)return{id:"blade-storm",label:"BLADE STORM",description:`ダッシュ斬り撃破 ×${Math.floor(strongKills)}`,bonus:2};
+  if(overdriveTime>=8)return{id:"redline",label:"REDLINE",description:`OVERDRIVE ${overdriveTime.toFixed(1)}秒`,bonus:2};
+  if(hazardDodges>=3)return{id:"road-thread",label:"ROAD THREAD",description:`危険地帯突破 ×${Math.floor(hazardDodges)}`,bonus:1};
+  return{id:"keep-pushing",label:"KEEP PUSHING",description:"危険へ踏み込んでSTYLE獲得",bonus:0};
 }
