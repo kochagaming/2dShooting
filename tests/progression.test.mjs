@@ -1,11 +1,17 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { applyUpgrades, upgradeCost, waveSettings, chooseEnemyType, advanceWave, isRunClear, applyEscapePenalty, updateRunRecord, runRank, STAGES, WEAPONS, BOSS_VARIANTS, pickRunContract, contractProgress } from "../dist/js/progression.js";
+import { applyUpgrades, applyOutfitModifiers, upgradeCost, waveSettings, chooseEnemyType, advanceWave, isRunClear, applyEscapePenalty, updateRunRecord, runRank, STAGES, WEAPONS, BOSS_VARIANTS, pickRunContract, contractProgress } from "../dist/js/progression.js";
 
 test("恒久強化がキャラクター性能へ反映される",()=>{
   const base={hp:100,speed:1,fireRate:1,shotDamage:1,slashRange:1,slashDamage:1,dashSpeed:1,dashCooldown:1};
   const tuned=applyUpgrades(base,{hp:2,speed:1,shoot:3,slash:4,dash:5});
   assert.equal(tuned.hp,116);assert.ok(tuned.shotDamage>1.14);assert.ok(tuned.slashRange>1.15);assert.ok(tuned.dashCooldown<.83);
+});
+
+test("衣装固有チューニングが出撃性能へ反映される",()=>{
+  const base={hp:100,speed:1,shotDamage:1,dashCooldown:1};
+  const tuned=applyOutfitModifiers(base,{hp:1.08,speed:.96,shotDamage:1.06,dashCooldown:.94});
+  assert.deepEqual(tuned,{hp:108,speed:.96,shotDamage:1.06,dashCooldown:.94});
 });
 
 test("強化コストと最大レベルを正しく返す",()=>{

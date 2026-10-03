@@ -59,6 +59,13 @@ export function applyUpgrades(base,levels={}){
   };
 }
 
+export function applyOutfitModifiers(stats,modifiers={}){
+  const tuned={...stats};
+  for(const [key,multiplier] of Object.entries(modifiers))if(Number.isFinite(tuned[key])&&Number.isFinite(multiplier))tuned[key]*=multiplier;
+  tuned.hp=Math.round(tuned.hp);
+  return tuned;
+}
+
 export function waveSettings(stageIndex,wave,loop=0){
   const stage=STAGES[stageIndex%STAGES.length], w=Math.max(1,Math.min(5,wave));
   return {

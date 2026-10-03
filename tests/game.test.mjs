@@ -49,3 +49,61 @@ test("トップ画像は衣装の正面・背面画像と分離されている",
   assert.match(gameSource, /ui\.keyartImage\.src=c\.topArt/);
   assert.doesNotMatch(gameSource, /ui\.keyartImage\.src=outfit\.front/);
 });
+
+test("3キャラクターの固有パッシブが戦闘処理へ接続されている", () => {
+  const gameSource = readFileSync(resolve(root, "dist/js/game.js"), "utf8");
+  assert.match(gameSource, /FLOW RECYCLE/);
+  assert.match(gameSource, /KINETIC AEGIS/);
+  assert.match(gameSource, /BLADE FEEDBACK/);
+  assert.match(gameSource, /state\.characterId==="ray"/);
+  assert.match(gameSource, /state\.characterId==="mira"/);
+  assert.match(gameSource, /state\.characterId==="lyn"/);
+});
+
+test("ダッシュ斬り撃破後に次の敵へ連鎖できる", () => {
+  const gameSource = readFileSync(resolve(root, "dist/js/game.js"), "utf8");
+  assert.match(gameSource, /chainTime:0,chainCount:0,lockTarget:null/);
+  assert.match(gameSource, /state\.chainTime=1\.15/);
+  assert.match(gameSource, /state\.player\.dashCd=0/);
+  assert.match(gameSource, /function drawDashLock\(\)/);
+  assert.match(gameSource, /SPACE \/\/ CHAIN/);
+});
+
+test("スマートフォン用の移動・戦闘操作と自動照準を備える", () => {
+  const html = readFileSync(resolve(root, "dist/index.html"), "utf8");
+  const css = readFileSync(resolve(root, "dist/styles.css"), "utf8");
+  const gameSource = readFileSync(resolve(root, "dist/js/game.js"), "utf8");
+  assert.match(html, /id="touchStick"/);
+  assert.match(html, /data-touch-hold="shoot"/);
+  assert.match(html, /data-touch-key="Space"/);
+  assert.match(html, /data-touch-key="KeyX"/);
+  assert.match(css, /body\.touch-enabled\.touch-play \.touch-controls\{display:block\}/);
+  assert.match(gameSource, /function setupTouchControls\(\)/);
+  assert.match(gameSource, /classList\.add\("touch-enabled"\)/);
+  assert.match(gameSource, /else if\(input\.touchShoot\)/);
+  assert.match(gameSource, /state\.enemies/);
+});
+
+test("ウェーブ進行時に挑戦中限定のSYNC MODULEを選択できる", () => {
+  const html = readFileSync(resolve(root, "dist/index.html"), "utf8");
+  const gameSource = readFileSync(resolve(root, "dist/js/game.js"), "utf8");
+  assert.match(html, /id="moduleDraft"/);
+  assert.match(html, /id="moduleChoices"/);
+  assert.match(gameSource, /const RUN_MODULES=/);
+  assert.match(gameSource, /function openModuleDraft\(\)/);
+  assert.match(gameSource, /function chooseRunModule\(id\)/);
+  assert.match(gameSource, /next\.stageChanged\|\|state\.wave===2\|\|state\.wave===4/);
+  assert.match(gameSource, /SYNC ×\$\{state\.modulePicks\}/);
+});
+
+test("標準ゲームパッドで移動と全戦闘アクションを操作できる", () => {
+  const gameSource = readFileSync(resolve(root, "dist/js/game.js"), "utf8");
+  assert.match(gameSource, /function pollGamepad\(\)/);
+  assert.match(gameSource, /navigator\.getGamepads/);
+  assert.match(gameSource, /input\.gamepadX/);
+  assert.match(gameSource, /input\.gamepadShoot/);
+  assert.match(gameSource, /rising\(4\)\|\|rising\(5\)/);
+  assert.match(gameSource, /rising\(2\).*"KeyX"/);
+  assert.match(gameSource, /rising\(1\).*"KeyC"/);
+  assert.match(gameSource, /rising\(3\).*"KeyQ"/);
+});

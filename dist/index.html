@@ -36,6 +36,17 @@
       <div id="announcer" class="announcer" aria-live="assertive"></div>
       <div id="debug" class="debug" hidden></div>
 
+      <section id="touchControls" class="touch-controls" aria-label="スマートフォン操作" hidden>
+        <div id="touchStick" class="touch-stick" aria-label="移動スティック"><i id="touchStickKnob"></i><span>MOVE</span></div>
+        <div class="touch-actions">
+          <button class="touch-button touch-weapon" type="button" data-touch-key="KeyQ"><b>Q</b><small>WEAPON</small></button>
+          <button class="touch-button touch-slide" type="button" data-touch-key="KeyC"><b>C</b><small>SLIDE</small></button>
+          <button class="touch-button touch-dash" type="button" data-touch-key="Space"><b>≫</b><small>DASH</small></button>
+          <button class="touch-button touch-slash" type="button" data-touch-key="KeyX"><b>刃</b><small>SLASH</small></button>
+          <button class="touch-button touch-shoot" type="button" data-touch-hold="shoot"><b>●</b><small>FIRE<br>AUTO AIM</small></button>
+        </div>
+      </section>
+
       <section id="startScreen" class="overlay start-screen">
         <div class="start-mark" aria-hidden="true">V<span>//</span>B</div>
         <figure class="ray-keyart" id="selectedKeyart" aria-label="選択中の操作キャラクター">
@@ -68,6 +79,14 @@
         <div class="game-over-actions"><button id="restartButton" type="button"><span id="restartLabel">REBOOT</span><small>ENTER</small></button><button id="resultUpgrade" class="secondary-button" type="button"><span>UPGRADE</span><small>強化へ</small></button></div>
       </section>
 
+      <section id="moduleDraft" class="overlay module-draft" hidden aria-labelledby="moduleDraftTitle">
+        <p class="eyebrow">MID-RUN TUNING // SELECT 1</p>
+        <h2 id="moduleDraftTitle">SYNC MODULE</h2>
+        <p class="module-lead">走行データから一時強化を生成。効果はこの挑戦中だけ有効です。</p>
+        <div id="moduleChoices" class="module-choices"></div>
+        <small class="module-hint">タップ / 1・2・3キーで選択</small>
+      </section>
+
       <section id="controlHelp" class="overlay control-help" hidden aria-labelledby="controlHelpTitle">
         <p class="eyebrow">CONTROL SCHEMATIC</p>
         <h2 id="controlHelpTitle">操作ガイド</h2>
@@ -87,7 +106,7 @@
             <div class="mouse-shape"><i></i><b></b></div>
             <span><em>L</em> カーソル方向へ射撃</span><span><em>R</em> 斬撃・敵弾破壊</span>
           </div>
-          <figcaption><b>SPACE → X</b> で敵へ吸着するダッシュ斬り。高速中の逆入力で急旋回。ダッシュ直後の弾際は<b>JUST DODGE</b>となりBOOSTを大量獲得。</figcaption>
+          <figcaption><b>SPACE → X</b> で敵へ吸着するダッシュ斬り。高速中の逆入力で急旋回。ダッシュ直後の弾際は<b>JUST DODGE</b>となりBOOSTを大量獲得。<br><b>スマホ：</b>左スティック＋右側アクションボタン。<b>ゲームパッド：</b>左スティック移動、A/RT射撃、LB/RBダッシュ、X斬撃。</figcaption>
         </figure>
         <button id="closeHelp" type="button"><span>ゲームへ戻る</span><small>H / ESC</small></button>
       </section>
@@ -106,7 +125,7 @@
           </div>
         </div>
         <div id="outfitSelectStage" class="selector-stage" hidden>
-          <div class="outfit-heading"><button id="backToCharacters" type="button">← CHARACTER</button><div><small id="outfitCharacterRole">BALANCED</small><h3><span id="outfitCharacterName">RAY</span> // 衣装選択</h3></div><button id="toggleOutfitView" class="view-toggle" type="button" aria-pressed="false">背後から見る</button></div>
+          <div class="outfit-heading"><button id="backToCharacters" type="button">← CHARACTER</button><div><small id="outfitCharacterRole">BALANCED</small><h3><span id="outfitCharacterName">RAY</span> // 衣装選択</h3><p id="characterPassive" class="character-passive">FLOW RECYCLE // NEAR MISSでダッシュ再装填</p></div><button id="toggleOutfitView" class="view-toggle" type="button" aria-pressed="false">背後から見る</button></div>
           <section class="parameter-panel" aria-labelledby="parameterTitle">
             <header><small>LIVE PERFORMANCE // BOOST LV1</small><h3 id="parameterTitle">出撃パラメータ</h3></header>
             <div id="parameterGrid" class="parameter-grid"></div>

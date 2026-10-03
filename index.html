@@ -12,6 +12,9 @@
   </style>
 </head>
 <body>
-  <iframe src="./dist/" title="VELOCITY//BREAKER game" allow="autoplay; fullscreen" autofocus></iframe>
+  <iframe id="gameFrame" src="./dist/" title="VELOCITY//BREAKER game" allow="autoplay; fullscreen" autofocus></iframe>
+  <script>
+    if (location.search) document.getElementById("gameFrame").src = `./dist/${location.search}`;
+  </script>
 </body>
 </html>
