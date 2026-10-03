@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { applyUpgrades, upgradeCost, waveSettings, chooseEnemyType, advanceWave, isRunClear, applyEscapePenalty, runRank, STAGES, WEAPONS, BOSS_VARIANTS, pickRunContract, contractProgress } from "../dist/js/progression.js";
+import { applyUpgrades, upgradeCost, waveSettings, chooseEnemyType, advanceWave, isRunClear, applyEscapePenalty, updateRunRecord, runRank, STAGES, WEAPONS, BOSS_VARIANTS, pickRunContract, contractProgress } from "../dist/js/progression.js";
 
 test("恒久強化がキャラクター性能へ反映される",()=>{
   const base={hp:100,speed:1,fireRate:1,shotDamage:1,slashRange:1,slashDamage:1,dashSpeed:1,dashCooldown:1};
@@ -44,4 +44,11 @@ test("RUN ORDERを選び、進捗と達成を判定できる",()=>{
 
 test("敵を逃すとBOOSTが減り、0未満にはならない",()=>{
   assert.equal(applyEscapePenalty(40),33);assert.equal(applyEscapePenalty(10,2),0);
+});
+
+test("キャラクター別記録はスコア・ランク・最速クリアを個別更新する",()=>{
+  const first=updateRunRecord({}, {score:5000,time:180,rank:"B",clear:true});
+  assert.deepEqual(first.record,{score:5000,clearTime:180,rank:"B",clears:1});
+  const second=updateRunRecord(first.record,{score:4200,time:150,rank:"A",clear:true});
+  assert.equal(second.record.score,5000);assert.equal(second.record.clearTime,150);assert.equal(second.record.rank,"A");assert.equal(second.record.clears,2);
 });

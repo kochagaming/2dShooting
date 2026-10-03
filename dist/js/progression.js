@@ -91,6 +91,13 @@ export function applyEscapePenalty(boost,count=1){
   return Math.max(0,boost-Math.max(0,count)*7);
 }
 
+export function updateRunRecord(record={},run={}){
+  const previous={score:Math.max(0,Number(record.score)||0),clearTime:Math.max(0,Number(record.clearTime)||0),rank:["D","C","B","A","S"].includes(record.rank)?record.rank:"D",clears:Math.max(0,Number(record.clears)||0)};
+  const rankOrder={D:0,C:1,B:2,A:3,S:4},score=Math.max(0,Number(run.score)||0),time=Math.max(0,Number(run.time)||0),rank=rankOrder[run.rank]===undefined?"D":run.rank;
+  const isBestScore=score>previous.score,isBestTime=Boolean(run.clear&&time&&(previous.clearTime===0||time<previous.clearTime)),isBestRank=rankOrder[rank]>rankOrder[previous.rank];
+  return {record:{score:isBestScore?score:previous.score,clearTime:isBestTime?time:previous.clearTime,rank:isBestRank?rank:previous.rank,clears:previous.clears+(run.clear?1:0)},isBestScore,isBestTime,isBestRank};
+}
+
 export function runRank({score=0,kills=0,near=0,dashNear=0,damage=0,maxCombo=0}={}){
   const performance=score+kills*90+near*45+dashNear*120+maxCombo*55-damage*750;
   if(performance>=18000&&damage<=1)return "S";

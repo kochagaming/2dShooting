@@ -3,7 +3,9 @@ import { readFile, stat } from "node:fs/promises";
 import { extname, join, normalize } from "node:path";
 
 const port = Number(process.env.PORT || 4173);
-const root = join(import.meta.dirname, "dist");
+// Serve the repository root so local preview matches GitHub Pages branch-root hosting.
+// The root index embeds the canonical static build from /dist/.
+const root = import.meta.dirname;
 const mime = { ".html": "text/html; charset=utf-8", ".css": "text/css; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".svg": "image/svg+xml" };
 
 createServer(async (req, res) => {

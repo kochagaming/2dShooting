@@ -1,5 +1,5 @@
 import { clamp, lerp, circlesOverlap, boostTier, nearMissType, normalize, distanceSq } from "./math.js";
-import { UPGRADE_KEYS, UPGRADE_DEFS, STAGES, WEAPONS, BOSS_VARIANTS, upgradeCost, applyUpgrades, waveSettings, chooseEnemyType, advanceWave, isRunClear, applyEscapePenalty, runRank, pickRunContract, contractProgress } from "./progression.js";
+import { UPGRADE_KEYS, UPGRADE_DEFS, STAGES, WEAPONS, BOSS_VARIANTS, upgradeCost, applyUpgrades, waveSettings, chooseEnemyType, advanceWave, isRunClear, applyEscapePenalty, updateRunRecord, runRank, pickRunContract, contractProgress } from "./progression.js";
 
 const canvas = document.querySelector("#game");
 const ctx = canvas.getContext("2d", { alpha: false });
@@ -10,32 +10,48 @@ const $ = (id) => document.getElementById(id);
 const ui = {
   score: $("score"), combo: $("combo"), hpBar: $("hpBar"), hpText: $("hpText"),
   boostBar: $("boostBar"), boostValue: $("boostValue"), boostLevel: $("boostLevel"),
-  speed: $("speed"), announcer: $("announcer"), debug: $("debug"),
+  speed: $("speed"), announcer: $("announcer"), debug: $("debug"),focusStatus:$("focusStatus"),
   start: $("startScreen"), gameOver: $("gameOver"), pause: $("pause"),
-  finalScore: $("finalScore"), maxCombo: $("maxCombo"), resultEyebrow:$("resultEyebrow"),resultTitle:$("resultTitle"),restartLabel:$("restartLabel"),help: $("controlHelp"), spriteSelect: $("spriteSelect"), selectedSpriteLabel: $("selectedSpriteLabel"),
+  finalScore: $("finalScore"), maxCombo: $("maxCombo"), resultEyebrow:$("resultEyebrow"),resultTitle:$("resultTitle"),restartLabel:$("restartLabel"),bestRecord:$("bestRecord"),resultRecord:$("resultRecord"),help: $("controlHelp"), spriteSelect: $("spriteSelect"), selectedSpriteLabel: $("selectedSpriteLabel"),
   characterStage: $("characterSelectStage"), outfitStage: $("outfitSelectStage"), outfitGrid: $("outfitGrid"), parameterGrid:$("parameterGrid"), characterStep: $("characterStep"), outfitStep: $("outfitStep"),
+  characterViewToggle:$("toggleCharacterView"),outfitViewToggle:$("toggleOutfitView"),characterViewLabel:$("characterViewLabel"),
   outfitName: $("outfitCharacterName"), outfitRole: $("outfitCharacterRole"), keyartImage: $("selectedKeyartImage"), characterName: $("selectedCharacterName"), characterCode: $("selectedCharacterCode"), characterMeta: $("selectedCharacterMeta"), characterLead: $("selectedCharacterLead"),
   stageLabel:$("stageLabel"),waveLabel:$("waveLabel"),eventLabel:$("eventLabel"),weaponLabel:$("weaponLabel"),bossHud:$("bossHud"),bossName:$("bossName"),bossBar:$("bossBar"),bossHp:$("bossHp"),runCore:$("runCore"),bankCore:$("bankCore"),upgradeCore:$("upgradeCore"),upgradeGrid:$("upgradeGrid"),contractLabel:$("contractLabel"),contractBar:$("contractBar"),contractProgress:$("contractProgress"),contractReward:$("contractReward"),
   stageReached:$("stageReached"),runReward:$("runReward"),resultCore:$("resultCore"),runRank:$("runRank"),resultKills:$("resultKills"),resultNear:$("resultNear"),resultDamage:$("resultDamage"),resultTime:$("resultTime")
 };
 let helpWasPaused = false;
 let selectorWasPaused = false;
+let selectionRearView = false;
+let combatFocus=(()=>{try{return localStorage.getItem("velocityBreakerCombatFocus")==="1"}catch{return false}})();
 const CHARACTERS = {
-  ray: { name:"RAY", jp:"レイ", role:"BALANCED", code:"ESCAPED SUBJECT // 07", meta:"BALANCED BOOST FIGHTER", portrait:"./assets/ray-key-art.png", description:"都市警備組織から逃亡した元実験体。BOOST DRIVEで射撃と斬撃を自在につなぐ万能型。", hp:100, speed:1, fireRate:1, shotDamage:1, bulletSpeed:1, dashSpeed:1, dashDuration:1, dashCooldown:1, slashRange:1, slashDamage:1, slashCooldown:1, accent:"#00f0ff", defaultOutfit:"7", outfits:[
-    {id:"1",name:"SCOUT BOB",note:"丸いボブ＋軽装",src:"./assets/ray-options/ray-01.png"},
-    {id:"4",name:"SUBJECT ZERO",note:"ピクシー＋実験体",src:"./assets/ray-options/ray-04.png"},
-    {id:"7",name:"FLUFF JACKET",note:"ふわ髪＋大きめ上着",src:"./assets/ray-options/ray-07.png"},
-    {id:"8",name:"LIGHT KNIGHT",note:"長髪＋騎士装甲",src:"./assets/ray-options/ray-08.png"},
-    {id:"10",name:"NEON COURIER",note:"フード＋スポーツ",src:"./assets/ray-options/ray-10.png"}
+  ray: { name:"RAY", jp:"レイ", role:"BALANCED", code:"ESCAPED SUBJECT // 07", meta:"BALANCED BOOST FIGHTER", description:"都市警備組織から逃亡した元実験体。BOOST DRIVEで射撃と斬撃を自在につなぐ万能型。", hp:100, speed:1, fireRate:1, shotDamage:1, bulletSpeed:1, dashSpeed:1, dashDuration:1, dashCooldown:1, slashRange:1, slashDamage:1, slashCooldown:1, accent:"#00f0ff", defaultOutfit:"7", outfits:[
+    {id:"1",name:"SCOUT BOB",note:"丸いボブ＋軽装",front:"./assets/characters/ray/front-01.png",rear:"./assets/ray-options/ray-01.png"},
+    {id:"4",name:"SUBJECT ZERO",note:"ピクシー＋実験体",front:"./assets/characters/ray/front-04.png",rear:"./assets/ray-options/ray-04.png"},
+    {id:"7",name:"FLUFF JACKET",note:"ふわ髪＋大きめ上着",front:"./assets/characters/ray/front-07.png",rear:"./assets/ray-options/ray-07.png"},
+    {id:"8",name:"LIGHT KNIGHT",note:"長髪＋騎士装甲",front:"./assets/characters/ray/front-08.png",rear:"./assets/ray-options/ray-08.png"},
+    {id:"10",name:"NEON COURIER",note:"ポニー＋スポーツ",front:"./assets/characters/ray/front-10.png",rear:"./assets/ray-options/ray-10.png"}
   ]},
-  mira: { name:"MIRA", jp:"ミラ", role:"HEAVY GUNNER", code:"WARDEN DEFECTOR // 02", meta:"ARMORED MARKSMAN", portrait:"./assets/characters/mira-front.png?v=front2", description:"都市警備隊を離反した重装射手。機動力と斬撃を犠牲に、高耐久と高威力射撃で敵を粉砕する。", hp:135, speed:.84, fireRate:.78, shotDamage:1.58, bulletSpeed:1.08, dashSpeed:.86, dashDuration:.92, dashCooldown:1.12, slashRange:.78, slashDamage:.88, slashCooldown:1.1, accent:"#ffb43f", defaultOutfit:"base", outfits:[{id:"base",name:"WARDEN BREAKER",note:"完全背面・重装射撃装備",src:"./assets/characters/mira.png?v=rear2"}]},
-  lyn: { name:"LYN", jp:"リン", role:"INTERCEPTOR", code:"STREET UNIT // 13", meta:"CLOSE-RANGE INTERCEPTOR", portrait:"./assets/characters/lyn-front.png?v=front2", description:"違法レース育ちの高速迎撃手。低耐久だが、最速のダッシュと巨大ブレードで弾幕の懐へ潜り込む。", hp:80, speed:1.17, fireRate:1.18, shotDamage:.78, bulletSpeed:.96, dashSpeed:1.2, dashDuration:1.13, dashCooldown:.82, slashRange:1.3, slashDamage:1.22, slashCooldown:.82, accent:"#ff55a5", defaultOutfit:"base", outfits:[{id:"base",name:"STREET COMET",note:"完全背面・軽量近接装備",src:"./assets/characters/lyn.png?v=rear2"}]}
+  mira: { name:"MIRA", jp:"ミラ", role:"HEAVY GUNNER", code:"WARDEN DEFECTOR // 02", meta:"ARMORED MARKSMAN", description:"都市警備隊を離反した重装射手。機動力と斬撃を犠牲に、高耐久と高威力射撃で敵を粉砕する。", hp:135, speed:.84, fireRate:.78, shotDamage:1.58, bulletSpeed:1.08, dashSpeed:.86, dashDuration:.92, dashCooldown:1.12, slashRange:.78, slashDamage:.88, slashCooldown:1.1, accent:"#ffb43f", defaultOutfit:"1", outfits:[
+    {id:"1",name:"WARDEN BREAKER",note:"白橙の制圧装甲",front:"./assets/characters/mira/front-01.png",rear:"./assets/characters/mira/rear-01.png"},
+    {id:"2",name:"BASTION WHITE",note:"要塞型ホワイト装甲",front:"./assets/characters/mira/front-02.png",rear:"./assets/characters/mira/rear-02.png"},
+    {id:"3",name:"SIEGE BLACK",note:"黒金の攻城装甲",front:"./assets/characters/mira/front-03.png",rear:"./assets/characters/mira/rear-03.png"},
+    {id:"4",name:"DESERT AEGIS",note:"荒野用フィールド装甲",front:"./assets/characters/mira/front-04.png",rear:"./assets/characters/mira/rear-04.png"},
+    {id:"5",name:"ARCTIC BULWARK",note:"氷雪用シアン装甲",front:"./assets/characters/mira/front-05.png",rear:"./assets/characters/mira/rear-05.png"}
+  ]},
+  lyn: { name:"LYN", jp:"リン", role:"INTERCEPTOR", code:"STREET UNIT // 13", meta:"CLOSE-RANGE INTERCEPTOR", description:"違法レース育ちの高速迎撃手。低耐久だが、最速のダッシュと巨大ブレードで弾幕の懐へ潜り込む。", hp:80, speed:1.17, fireRate:1.18, shotDamage:.78, bulletSpeed:.96, dashSpeed:1.2, dashDuration:1.13, dashCooldown:.82, slashRange:1.3, slashDamage:1.22, slashCooldown:.82, accent:"#ff55a5", defaultOutfit:"1", outfits:[
+    {id:"1",name:"STREET COMET",note:"ネオン街の軽量装備",front:"./assets/characters/lyn/front-01.png",rear:"./assets/characters/lyn/rear-01.png"},
+    {id:"2",name:"RAZOR PUNK",note:"マゼンタの反逆装備",front:"./assets/characters/lyn/front-02.png",rear:"./assets/characters/lyn/rear-02.png"},
+    {id:"3",name:"NEON KUNOICHI",note:"忍装束型スピード装備",front:"./assets/characters/lyn/front-03.png",rear:"./assets/characters/lyn/rear-03.png"},
+    {id:"4",name:"WASTELAND DASHER",note:"荒野用スカベンジャー",front:"./assets/characters/lyn/front-04.png",rear:"./assets/characters/lyn/rear-04.png"},
+    {id:"5",name:"FROST VANDAL",note:"白青の寒冷地装備",front:"./assets/characters/lyn/front-05.png",rear:"./assets/characters/lyn/rear-05.png"}
+  ]}
 };
 const PROFILE_KEY="velocityBreakerProfileV1";
 function blankUpgrades(){return Object.fromEntries(Object.keys(CHARACTERS).map(id=>[id,Object.fromEntries(UPGRADE_KEYS.map(key=>[key,0]))]));}
+function blankRecords(){return Object.fromEntries(Object.keys(CHARACTERS).map(id=>[id,{score:0,clearTime:0,rank:"D",clears:0}]));}
 function loadProfile(){
-  const fallback={cores:0,upgrades:blankUpgrades()};
-  try{const saved=JSON.parse(localStorage.getItem(PROFILE_KEY)||"null");if(!saved)return fallback;return{cores:Math.max(0,Number(saved.cores)||0),upgrades:Object.fromEntries(Object.keys(CHARACTERS).map(id=>[id,Object.fromEntries(UPGRADE_KEYS.map(key=>[key,clamp(Number(saved.upgrades?.[id]?.[key])||0,0,5)]))]))}}catch{return fallback}
+  const fallback={cores:0,upgrades:blankUpgrades(),records:blankRecords()};
+  try{const saved=JSON.parse(localStorage.getItem(PROFILE_KEY)||"null");if(!saved)return fallback;return{cores:Math.max(0,Number(saved.cores)||0),upgrades:Object.fromEntries(Object.keys(CHARACTERS).map(id=>[id,Object.fromEntries(UPGRADE_KEYS.map(key=>[key,clamp(Number(saved.upgrades?.[id]?.[key])||0,0,5)]))])),records:Object.fromEntries(Object.keys(CHARACTERS).map(id=>[id,updateRunRecord(saved.records?.[id]).record]))}}catch{return fallback}
 }
 let profile=loadProfile();
 function saveProfile(){try{localStorage.setItem(PROFILE_KEY,JSON.stringify(profile))}catch{}}
@@ -56,18 +72,20 @@ function loadSprite(key,src){
   };
   img.src=src;spriteImages.set(key,img);
 }
-for(const [characterId,c] of Object.entries(CHARACTERS))for(const outfit of c.outfits)loadSprite(`${characterId}:${outfit.id}`,outfit.src);
+for(const [characterId,c] of Object.entries(CHARACTERS))for(const outfit of c.outfits)loadSprite(`${characterId}:${outfit.id}`,outfit.rear);
 const activeCharacter=()=>CHARACTERS[selectedCharacter];
 const activeOutfit=()=>activeCharacter().outfits.find(o=>o.id===selectedOutfits[selectedCharacter])??activeCharacter().outfits[0];
 
 function updateSpriteSelection() {
   const c=activeCharacter(),outfit=activeOutfit();
-  document.querySelectorAll(".character-card").forEach(card=>card.setAttribute("aria-checked",String(card.dataset.character===selectedCharacter)));
+  document.querySelectorAll(".character-card").forEach(card=>{const cardCharacter=CHARACTERS[card.dataset.character],cardOutfit=cardCharacter.outfits.find(o=>o.id===selectedOutfits[card.dataset.character])??cardCharacter.outfits[0],image=card.querySelector("img");card.setAttribute("aria-checked",String(card.dataset.character===selectedCharacter));image.src=selectionRearView?cardOutfit.rear:cardOutfit.front;image.alt=`${cardCharacter.jp}の${selectionRearView?"ゲーム中の背面":"正面全身"}`});
   document.querySelectorAll(".sprite-card").forEach(card=>card.setAttribute("aria-checked",String(card.dataset.outfit===outfit.id)));
   ui.selectedSpriteLabel.textContent=`${c.name} // OUTFIT ${String(outfit.id).toUpperCase()} ${outfit.name}`;
-  ui.keyartImage.src=c.portrait;ui.keyartImage.alt=`${c.jp}の正面キャラクターアート`;ui.characterName.textContent=c.name;ui.characterCode.textContent=c.code;ui.characterMeta.textContent=c.meta;
+  ui.keyartImage.src=outfit.front;ui.keyartImage.alt=`${c.jp} ${outfit.name}の正面キャラクターアート`;ui.characterName.textContent=c.name;ui.characterCode.textContent=c.code;ui.characterMeta.textContent=c.meta;
   ui.characterLead.innerHTML=`<strong>${c.jp}</strong> — ${c.description}`;
   ui.bankCore.textContent=profile.cores;ui.upgradeCore.textContent=profile.cores;
+  const record=profile.records[selectedCharacter],bestTime=record.clearTime?`${String(Math.floor(record.clearTime/60)).padStart(2,"0")}:${String(Math.floor(record.clearTime%60)).padStart(2,"0")}`:"--:--";ui.bestRecord.innerHTML=`PERSONAL BEST // <b>${record.rank}</b>　${String(record.score).padStart(6,"0")}　CLEAR ${bestTime}　×${record.clears}`;
+  ui.focusStatus.textContent=combatFocus?"ON":"OFF";
 }
 
 function renderUpgrades(){
@@ -94,14 +112,16 @@ function buyUpgrade(key){
 }
 
 function renderOutfits() {
-  const c=activeCharacter();ui.outfitName.textContent=c.name;ui.outfitRole.textContent=c.role;ui.outfitGrid.classList.toggle("is-single",c.outfits.length===1);
-  ui.outfitGrid.innerHTML=c.outfits.map((outfit,index)=>`<button class="sprite-card" type="button" data-outfit="${outfit.id}" role="radio"><b>${String(outfit.id).padStart(2,"0").toUpperCase()}</b><img src="${outfit.src}" alt="${c.jp} ${outfit.name}"><span>${outfit.name}</span><small>${outfit.note}</small></button>`).join("");
+  const c=activeCharacter();ui.outfitName.textContent=c.name;ui.outfitRole.textContent=c.role;
+  ui.outfitGrid.innerHTML=c.outfits.map((outfit,index)=>`<button class="sprite-card" type="button" data-outfit="${outfit.id}" role="radio"><b>${String(outfit.id).padStart(2,"0").toUpperCase()}</b><img src="${selectionRearView?outfit.rear:outfit.front}" alt="${c.jp} ${outfit.name}の${selectionRearView?"ゲーム中の背面":"正面全身"}"><span>${outfit.name}</span><small>${outfit.note}</small></button>`).join("");
   ui.outfitGrid.querySelectorAll(".sprite-card").forEach(card=>card.addEventListener("click",()=>chooseOutfit(card.dataset.outfit)));renderUpgrades();updateSpriteSelection();
 }
 
+function setSelectionView(rear){selectionRearView=rear;const text=rear?"正面を見る":"背後から見る";ui.characterViewToggle.textContent=text;ui.outfitViewToggle.textContent=text;ui.characterViewToggle.setAttribute("aria-pressed",String(rear));ui.outfitViewToggle.setAttribute("aria-pressed",String(rear));ui.characterViewLabel.textContent=rear?"GAME VIEW // プレイ時の背面":"FRONT VIEW // キャラクター全身";renderOutfits();}
+
 function chooseCharacter(id){if(!CHARACTERS[id])return;selectedCharacter=id;try{localStorage.setItem("selectedCharacter",id)}catch{}renderOutfits();showOutfitStage();audio.start();audio.near(false)}
 function chooseOutfit(id){if(!activeCharacter().outfits.some(o=>o.id===id))return;selectedOutfits[selectedCharacter]=id;try{localStorage.setItem(`outfit:${selectedCharacter}`,id)}catch{}updateSpriteSelection();audio.start();audio.near(false)}
-function showCharacterStage(){ui.characterStage.hidden=false;ui.outfitStage.hidden=true;ui.characterStep.classList.add("active");ui.outfitStep.classList.remove("active")}
+function showCharacterStage(){ui.characterStage.hidden=false;ui.outfitStage.hidden=true;ui.characterStep.classList.add("active");ui.outfitStep.classList.remove("active");updateSpriteSelection()}
 function showOutfitStage(){ui.characterStage.hidden=true;ui.outfitStage.hidden=false;ui.characterStep.classList.remove("active");ui.outfitStep.classList.add("active");renderUpgrades()}
 
 function toggleSpriteSelect(force) {
@@ -182,8 +202,9 @@ function startGame() {
 
 function endGame(clear=false) {
   state.mode = "gameover";state.cleared=clear;state.shake = clear?26:18;burst(state.player.x,state.player.y,clear?"#c8ff2e":"#ff2e78",clear?65:40,clear?430:350);audio.boom();
-  if(!state.rewardCommitted){profile.cores+=state.runCores;state.rewardCommitted=true;saveProfile()}
+  if(!state.rewardCommitted){profile.cores+=state.runCores;state.rewardCommitted=true}
   const rank=runRank({...state.stats,score:state.score,maxCombo:state.maxCombo});const mins=Math.floor(state.realTime/60),secs=Math.floor(state.realTime%60);
+  const recordUpdate=updateRunRecord(profile.records[state.characterId],{score:state.score,time:state.realTime,rank,clear});profile.records[state.characterId]=recordUpdate.record;saveProfile();const recordFlags=[recordUpdate.isBestScore&&"HIGH SCORE",recordUpdate.isBestTime&&"BEST TIME",recordUpdate.isBestRank&&"BEST RANK"].filter(Boolean);ui.resultRecord.textContent=recordFlags.length?`NEW RECORD // ${recordFlags.join(" + ")}`:"PERSONAL BEST UNCHANGED";ui.resultRecord.classList.toggle("show",recordFlags.length>0);updateSpriteSelection();
   ui.gameOver.classList.toggle("clear",clear);ui.resultEyebrow.textContent=clear?"ROUTE COMPLETE // BONUS CORE +8":"RUN TERMINATED";ui.resultTitle.innerHTML=clear?"MISSION<br>CLEAR":"CORE<br>BREAK";ui.restartLabel.textContent=clear?"NEXT RUN":"REBOOT";
   ui.finalScore.textContent = String(state.score).padStart(6, "0"); ui.maxCombo.textContent = state.maxCombo;ui.stageReached.textContent=clear?"ALL CLEAR":`S${state.stageIndex+1}-W${state.wave}`;ui.runReward.textContent=state.runCores;ui.resultCore.textContent=profile.cores;ui.bankCore.textContent=profile.cores;ui.runRank.textContent=rank;ui.resultKills.textContent=state.stats.kills;ui.resultNear.textContent=state.stats.near;ui.resultDamage.textContent=state.stats.damage;ui.resultTime.textContent=`${String(mins).padStart(2,"0")}:${String(secs).padStart(2,"0")}`;ui.gameOver.hidden = false;
 }
@@ -197,6 +218,7 @@ addEventListener("keydown", (e) => {
   if (key === "Escape" && !ui.spriteSelect.hidden) { if(!ui.outfitStage.hidden)showCharacterStage();else toggleSpriteSelect(false); }
   else if (key === "Escape" && !ui.help.hidden) toggleHelp(false);
   if (key === "F3") { e.preventDefault(); ui.debug.hidden = !ui.debug.hidden; }
+  if(key==="KeyV"){combatFocus=!combatFocus;ui.focusStatus.textContent=combatFocus?"ON":"OFF";try{localStorage.setItem("velocityBreakerCombatFocus",combatFocus?"1":"0")}catch{}if(state.mode==="play")announce(combatFocus?"COMBAT FOCUS // ON":"COMBAT FOCUS // OFF",true)}
   if (key === "KeyP" && state.mode === "play") { state.paused = !state.paused; ui.pause.hidden = !state.paused; }
 });
 addEventListener("keyup", (e) => input.keys.delete(keyName(e)));
@@ -204,10 +226,10 @@ canvas.addEventListener("mousemove", (e) => { const r = canvas.getBoundingClient
 canvas.addEventListener("mousedown", (e) => { audio.start(); if (state.mode !== "play") return; if (e.button === 0) input.mouse = true; if (e.button === 2) input.pressed.add("MouseSlash"); });
 addEventListener("mouseup", (e) => { if (e.button === 0) input.mouse = false; });
 canvas.addEventListener("contextmenu", (e) => e.preventDefault());
-$("startButton").addEventListener("click", startGame); $("restartButton").addEventListener("click", startGame); $("closeHelp").addEventListener("click", () => toggleHelp(false));
+$("startButton").addEventListener("click", startGame); $("restartButton").addEventListener("click", startGame);$("openHelp").addEventListener("click",()=>toggleHelp(true)); $("closeHelp").addEventListener("click", () => toggleHelp(false));
 $("openSpriteSelect").addEventListener("click",()=>toggleSpriteSelect(true));$("closeSpriteSelect").addEventListener("click",()=>toggleSpriteSelect(false));
 $("resultUpgrade").addEventListener("click",()=>toggleSpriteSelect(true));
-$("backToCharacters").addEventListener("click",showCharacterStage);document.querySelectorAll(".character-card").forEach(card=>card.addEventListener("click",()=>chooseCharacter(card.dataset.character)));renderOutfits();updateSpriteSelection();
+$("backToCharacters").addEventListener("click",showCharacterStage);ui.characterViewToggle.addEventListener("click",()=>setSelectionView(!selectionRearView));ui.outfitViewToggle.addEventListener("click",()=>setSelectionView(!selectionRearView));document.querySelectorAll(".character-card").forEach(card=>card.addEventListener("click",()=>chooseCharacter(card.dataset.character)));setSelectionView(false);
 
 const down = (...keys) => keys.some(k => input.keys.has(k));
 const tapped = (...keys) => keys.some(k => input.pressed.has(k));
@@ -529,13 +551,13 @@ function drawBackground() {
     ctx.restore()}
 
   // Weather grows stronger by wave but stays translucent and away from enemy-bullet colors.
-  if(wave>=4){const weatherCount=stage===0?34:stage===1?46:60;ctx.globalAlpha=stage===1?.13:.2;ctx.strokeStyle=stage===1?"#c5aa82":"#e8f1ed";ctx.lineWidth=stage===2?2:1;for(let i=0;i<weatherCount;i++){const x=(i*97+state.time*(stage===1?90:stage===2?-75:125))%(W+100)-50,y=(i*53+state.scroll*(stage===1?.22:.48))%(H+80)-40;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+(stage===2?18:-8),y+18+speedFx*34);ctx.stroke()}ctx.globalAlpha=1}
+  if(wave>=4){const weatherCount=(stage===0?34:stage===1?46:60)*(combatFocus?.45:1);ctx.globalAlpha=(stage===1?.13:.2)*(combatFocus?.55:1);ctx.strokeStyle=stage===1?"#c5aa82":"#e8f1ed";ctx.lineWidth=stage===2?2:1;for(let i=0;i<weatherCount;i++){const x=(i*97+state.time*(stage===1?90:stage===2?-75:125))%(W+100)-50,y=(i*53+state.scroll*(stage===1?.22:.48))%(H+80)-40;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+(stage===2?18:-8),y+18+speedFx*34);ctx.stroke()}ctx.globalAlpha=1}
   if(wave===5){ctx.fillStyle="rgba(24,25,28,.16)";ctx.fillRect(0,0,W,H);ctx.fillStyle="rgba(120,24,30,.12)";ctx.fillRect(0,0,W,horizon+35)}
 
   // Speed lines remain neutral and confined mostly to the outer edges.
   if(speedFx>.12){ctx.lineWidth=1+speedFx*2;for(let i=0;i<18;i++){const edgeX=i%2?W+32:-32,edgeY=150+(i%9)*102,endX=W/2+(edgeX-W/2)*.28;ctx.strokeStyle="#edf4ef";ctx.globalAlpha=(.018+speedFx*.075)*(1-(i%5)*.1);ctx.beginPath();ctx.moveTo(endX,horizon);ctx.lineTo(edgeX,edgeY+speedFx*135);ctx.stroke()}ctx.globalAlpha=1}
   if(state.speedBurst>.08){ctx.globalAlpha=state.speedBurst*.25;ctx.lineWidth=3;ctx.strokeStyle="#ffffff";ctx.beginPath();ctx.moveTo(roadTopL-8,horizon);ctx.lineTo(30,H);ctx.moveTo(roadTopR+8,horizon);ctx.lineTo(W-30,H);ctx.stroke();ctx.globalAlpha=1}
-  for(const s of state.streaks){ctx.globalAlpha=clamp(s.life*2,0,.52);ctx.fillStyle=tier.level===5?"#c8ff2e":"#e8efea";ctx.fillRect(s.x,s.y,2+(speedFx>.7?1:0),s.len)}ctx.globalAlpha=1;
+  if(combatFocus){ctx.fillStyle="rgba(0,4,7,.2)";ctx.fillRect(0,0,W,H)}for(const s of state.streaks){ctx.globalAlpha=clamp(s.life*2,0,combatFocus?.26:.52);ctx.fillStyle=tier.level===5?"#c8ff2e":"#e8efea";ctx.fillRect(s.x,s.y,2+(speedFx>.7?1:0),s.len)}ctx.globalAlpha=1;
 }
 
 function pixelPlayer(x,y,alpha=1,dash=false) {
@@ -651,7 +673,7 @@ function drawItem(item){
 }
 
 function draw() {
-  const shakeX=(Math.random()-.5)*state.shake,shakeY=(Math.random()-.5)*state.shake,dashZoom=1+state.speedBurst*.048;ctx.save();ctx.translate(shakeX+state.camera.x,shakeY+state.camera.y);ctx.translate(W/2,H*.55);ctx.scale(dashZoom,dashZoom);ctx.translate(-W/2,-H*.55);drawBackground();
+  const focusScale=combatFocus?.42:1,shakeX=(Math.random()-.5)*state.shake*focusScale,shakeY=(Math.random()-.5)*state.shake*focusScale,dashZoom=1+state.speedBurst*.048*focusScale;ctx.save();ctx.translate(shakeX+state.camera.x*focusScale,shakeY+state.camera.y*focusScale);ctx.translate(W/2,H*.55);ctx.scale(dashZoom,dashZoom);ctx.translate(-W/2,-H*.55);drawBackground();
   for(const ring of state.rings){ctx.globalAlpha=clamp(ring.life/ring.maxLife,0,1)*.7;ctx.strokeStyle=ring.color;ctx.lineWidth=2+ring.life*14;ctx.beginPath();ctx.ellipse(ring.x,ring.y,ring.r,ring.r*.55,0,0,Math.PI*2);ctx.stroke()}ctx.globalAlpha=1;
   for(const g of state.ghosts) pixelPlayer(g.x,g.y,(g.life/g.maxLife)*(g.dash?.46:.25),g.dash);
   const trailP=state.player,trailStrength=clamp(Math.hypot(trailP.vx,trailP.vy)/700,0,.42)+state.speedBurst*.72;if(trailStrength>.12){const backX=-trailP.lastDir.x,backY=-trailP.lastDir.y,trailLength=55+trailStrength*210;for(let i=-1;i<=1;i++){ctx.globalAlpha=trailStrength*(i===0 ? .36 : .18);ctx.strokeStyle=i===0?"#eaffff":CHARACTERS[state.characterId].accent;ctx.lineWidth=i===0?3:2;ctx.beginPath();ctx.moveTo(trailP.x+backY*i*7,trailP.y-backX*i*7);ctx.lineTo(trailP.x+backX*trailLength+backY*i*14,trailP.y+backY*trailLength-backX*i*14);ctx.stroke()}ctx.globalAlpha=1}
@@ -665,7 +687,7 @@ function draw() {
   if(!(p.inv>0&&Math.floor(p.inv*14)%2))pixelPlayer(p.x,p.y,1,p.dashTime>0||p.slideTime>0||state.speedBurst>.45);
   for(const q of state.particles){ctx.globalAlpha=clamp(q.life/q.maxLife,0,1);ctx.fillStyle=q.color;ctx.fillRect(Math.round(q.x-q.size/2),Math.round(q.y-q.size/2),q.size,q.size)}ctx.globalAlpha=1;
   for(const t of state.texts){ctx.globalAlpha=clamp(t.life*2,0,1);ctx.fillStyle=t.color;ctx.font=`900 italic ${t.size}px monospace`;ctx.textAlign="center";ctx.fillText(t.text,t.x,t.y)}ctx.globalAlpha=1;ctx.textAlign="left";
-  if(state.flash>0){ctx.fillStyle=`rgba(255,46,120,${state.flash*1.7})`;ctx.fillRect(0,0,W,H)}ctx.restore();
+  if(state.flash>0){ctx.fillStyle=`rgba(255,46,120,${state.flash*(combatFocus?.7:1.7)})`;ctx.fillRect(0,0,W,H)}ctx.restore();
   const speedShade=clamp((state.visualSpeed-700)/1200,0,.34)+state.speedBurst*.2;if(speedShade>0){const vignette=ctx.createRadialGradient(W/2,H*.52,W*.18,W/2,H*.52,W*.68);vignette.addColorStop(0,"rgba(0,0,0,0)");vignette.addColorStop(.7,`rgba(0,10,18,${speedShade*.18})`);vignette.addColorStop(1,`rgba(0,0,0,${speedShade})`);ctx.fillStyle=vignette;ctx.fillRect(0,0,W,H)}
 }
 

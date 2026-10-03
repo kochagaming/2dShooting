@@ -46,28 +46,14 @@
           <p class="eyebrow">COMBAT TEST // VERDANT ROUTE</p>
           <h1>弾幕へ、<br><em>踏み込め。</em></h1>
           <p class="lead" id="selectedCharacterLead"><strong>レイ</strong> — 都市警備組織から逃亡した元実験体。脚部のBOOST DRIVEで、追手の弾幕を速度へ変える。</p>
-          <figure class="control-diagram control-diagram--compact" aria-label="操作キー説明図">
-          <div class="move-keys" aria-label="WASDで8方向移動">
-            <kbd class="key-w">W<i>↑</i></kbd><kbd class="key-a">A<i>←</i></kbd><kbd class="key-s">S<i>↓</i></kbd><kbd class="key-d">D<i>→</i></kbd>
-            <span>8方向移動</span>
-          </div>
-          <div class="action-keys">
-            <div><kbd>Z</kbd><i class="action-line shoot-line"></i><strong>射撃</strong><small>長押し</small></div>
-            <div><kbd>SPACE</kbd><i class="action-line dash-line"></i><strong>ダッシュ</strong></div>
-            <div><kbd>X</kbd><i class="action-line slash-line"></i><strong>斬撃</strong></div>
-          </div>
-          <div class="mouse-map" aria-label="マウス操作">
-            <div class="mouse-shape"><i></i><b></b></div>
-            <span><em>L</em> 射撃</span><span><em>R</em> 斬撃</span>
-          </div>
-          <figcaption><b>C</b> スライド　<b>Q</b> 武器変更　ダッシュ中に斬撃で<strong>DASH BREAK</strong></figcaption>
-          </figure>
           <div class="start-actions">
             <button id="startButton" type="button"><span>RUN PROTOTYPE</span><small>ENTER</small></button>
             <button id="openSpriteSelect" class="secondary-button" type="button"><span>SELECT LOADOUT</span><small>3 CHARACTERS</small></button>
+            <button id="openHelp" class="secondary-button" type="button"><span>操作説明</span><small>H</small></button>
           </div>
           <div class="bank-core">DRIVE CORE <b id="bankCore">0</b><small>敵から回収して恒久強化に使用</small></div>
-          <p class="hint"><kbd>H</kbd> 操作図を拡大　<kbd>F3</kbd> デバッグ　<kbd>P</kbd> ポーズ</p>
+          <div class="best-record" id="bestRecord">PERSONAL BEST // NO DATA</div>
+          <p class="hint"><kbd>V</kbd> 背景抑制 <b id="focusStatus">OFF</b>　<kbd>F3</kbd> デバッグ　<kbd>P</kbd> ポーズ</p>
         </div>
       </section>
 
@@ -75,6 +61,7 @@
         <p class="eyebrow" id="resultEyebrow">RUN TERMINATED</p>
         <h2 id="resultTitle">CORE<br>BREAK</h2>
         <div class="rank-badge"><small>RUN RANK</small><b id="runRank">D</b></div>
+        <div class="result-record" id="resultRecord">PERSONAL BEST UPDATED</div>
         <dl><div><dt>SCORE</dt><dd id="finalScore">0</dd></div><div><dt>MAX COMBO</dt><dd id="maxCombo">0</dd></div><div><dt>REACHED</dt><dd id="stageReached">S1-W1</dd></div></dl>
         <div class="run-report"><span>KILL <b id="resultKills">0</b></span><span>NEAR MISS <b id="resultNear">0</b></span><span>DAMAGE <b id="resultDamage">0</b></span><span>TIME <b id="resultTime">00:00</b></span></div>
         <div class="reward-summary"><span>RECOVERED</span><strong>◆ <b id="runReward">0</b></strong><small>TOTAL CORE <b id="resultCore">0</b></small></div>
@@ -111,14 +98,15 @@
           <div class="selector-steps" aria-label="選択手順"><b id="characterStep" class="active">01 CHARACTER</b><i></i><b id="outfitStep">02 OUTFIT</b></div>
         </header>
         <div id="characterSelectStage" class="selector-stage">
+          <div class="selector-viewbar"><span id="characterViewLabel">FRONT VIEW // キャラクター全身</span><button id="toggleCharacterView" class="view-toggle" type="button" aria-pressed="false">背後から見る</button></div>
           <div class="character-grid" role="radiogroup" aria-label="操作キャラクター候補">
-            <button class="character-card ray" type="button" data-character="ray" role="radio"><span class="char-number">01</span><img src="./assets/ray-options/ray-07.png" alt="レイ"><div class="char-copy"><small>BALANCED</small><strong>RAY <em>レイ</em></strong><p>BOOST DRIVEで弾幕を駆ける万能型</p><dl><div><dt>速度</dt><dd><i style="--stat:72%"></i></dd></div><div><dt>射撃</dt><dd><i style="--stat:72%"></i></dd></div><div><dt>斬撃</dt><dd><i style="--stat:72%"></i></dd></div><div><dt>耐久</dt><dd><i style="--stat:66%"></i></dd></div></dl></div></button>
-            <button class="character-card mira" type="button" data-character="mira" role="radio"><span class="char-number">02</span><img src="./assets/characters/mira.png?v=rear2" alt="背面を向いたミラ"><div class="char-copy"><small>HEAVY GUNNER</small><strong>MIRA <em>ミラ</em></strong><p>重装甲と高威力カービンで制圧する射撃型</p><dl><div><dt>速度</dt><dd><i style="--stat:48%"></i></dd></div><div><dt>射撃</dt><dd><i style="--stat:94%"></i></dd></div><div><dt>斬撃</dt><dd><i style="--stat:42%"></i></dd></div><div><dt>耐久</dt><dd><i style="--stat:96%"></i></dd></div></dl></div></button>
-            <button class="character-card lyn" type="button" data-character="lyn" role="radio"><span class="char-number">03</span><img src="./assets/characters/lyn.png?v=rear2" alt="背面を向いたリン"><div class="char-copy"><small>INTERCEPTOR</small><strong>LYN <em>リン</em></strong><p>最速ダッシュと大斬撃で懐へ飛び込む近接型</p><dl><div><dt>速度</dt><dd><i style="--stat:98%"></i></dd></div><div><dt>射撃</dt><dd><i style="--stat:58%"></i></dd></div><div><dt>斬撃</dt><dd><i style="--stat:100%"></i></dd></div><div><dt>耐久</dt><dd><i style="--stat:42%"></i></dd></div></dl></div></button>
+            <button class="character-card ray" type="button" data-character="ray" role="radio"><span class="char-number">01</span><img src="./assets/characters/ray/front-07.png" alt="レイの正面全身"><div class="char-copy"><small>BALANCED</small><strong>RAY <em>レイ</em></strong><p>BOOST DRIVEで弾幕を駆ける万能型</p><dl><div><dt>速度</dt><dd><i style="--stat:72%"></i></dd></div><div><dt>射撃</dt><dd><i style="--stat:72%"></i></dd></div><div><dt>斬撃</dt><dd><i style="--stat:72%"></i></dd></div><div><dt>耐久</dt><dd><i style="--stat:66%"></i></dd></div></dl></div></button>
+            <button class="character-card mira" type="button" data-character="mira" role="radio"><span class="char-number">02</span><img src="./assets/characters/mira/front-01.png" alt="ミラの正面全身"><div class="char-copy"><small>HEAVY GUNNER</small><strong>MIRA <em>ミラ</em></strong><p>重装甲と高威力カービンで制圧する射撃型</p><dl><div><dt>速度</dt><dd><i style="--stat:48%"></i></dd></div><div><dt>射撃</dt><dd><i style="--stat:94%"></i></dd></div><div><dt>斬撃</dt><dd><i style="--stat:42%"></i></dd></div><div><dt>耐久</dt><dd><i style="--stat:96%"></i></dd></div></dl></div></button>
+            <button class="character-card lyn" type="button" data-character="lyn" role="radio"><span class="char-number">03</span><img src="./assets/characters/lyn/front-01.png" alt="リンの正面全身"><div class="char-copy"><small>INTERCEPTOR</small><strong>LYN <em>リン</em></strong><p>最速ダッシュと大斬撃で懐へ飛び込む近接型</p><dl><div><dt>速度</dt><dd><i style="--stat:98%"></i></dd></div><div><dt>射撃</dt><dd><i style="--stat:58%"></i></dd></div><div><dt>斬撃</dt><dd><i style="--stat:100%"></i></dd></div><div><dt>耐久</dt><dd><i style="--stat:42%"></i></dd></div></dl></div></button>
           </div>
         </div>
         <div id="outfitSelectStage" class="selector-stage" hidden>
-          <div class="outfit-heading"><button id="backToCharacters" type="button">← CHARACTER</button><div><small id="outfitCharacterRole">BALANCED</small><h3><span id="outfitCharacterName">RAY</span> // 衣装選択</h3></div></div>
+          <div class="outfit-heading"><button id="backToCharacters" type="button">← CHARACTER</button><div><small id="outfitCharacterRole">BALANCED</small><h3><span id="outfitCharacterName">RAY</span> // 衣装選択</h3></div><button id="toggleOutfitView" class="view-toggle" type="button" aria-pressed="false">背後から見る</button></div>
           <section class="parameter-panel" aria-labelledby="parameterTitle">
             <header><small>LIVE PERFORMANCE // BOOST LV1</small><h3 id="parameterTitle">出撃パラメータ</h3></header>
             <div id="parameterGrid" class="parameter-grid"></div>
