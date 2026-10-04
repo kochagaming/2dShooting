@@ -22,10 +22,10 @@ export const STAGES = [
 ];
 
 export const WEAPONS = [
-  { id:"pistol", label:"HANDGUN", short:"HG", fireDelay:.105, damage:12, speed:850 },
-  { id:"shotgun", label:"SHOTGUN", short:"SG", fireDelay:.34, damage:7, speed:760 },
-  { id:"laser", label:"LASER", short:"LS", fireDelay:.058, damage:4.4, speed:1320 },
-  { id:"missile", label:"MISSILE", short:"MS", fireDelay:.48, damage:30, speed:470 }
+  { id:"pistol", label:"HANDGUN", short:"HG", trait:"BALANCED", fireDelay:.105, damage:12, speed:850 },
+  { id:"shotgun", label:"SHOTGUN", short:"SG", trait:"CLOSE BURST", fireDelay:.34, damage:7, speed:760 },
+  { id:"laser", label:"LASER", short:"LS", trait:"PIERCE ×3", fireDelay:.058, damage:4.4, speed:1320 },
+  { id:"missile", label:"MISSILE", short:"MS", trait:"HOMING BLAST", fireDelay:.48, damage:30, speed:470 }
 ];
 
 export const WEAPON_UPGRADE_KEYS = WEAPONS.map(weapon=>weapon.id);
@@ -45,9 +45,12 @@ export function weaponUpgradeStats(level=0){
 }
 
 export const RUN_CONTRACTS = [
-  { id:"grazer", label:"GRAZE ORDER", stat:"near", target:15, reward:3 },
-  { id:"breaker", label:"DASH BREAK ORDER", stat:"strongKills", target:8, reward:4 },
-  { id:"overdrive", label:"OVERDRIVE ORDER", stat:"overdriveTime", target:10, reward:4 }
+  { id:"grazer", label:"GRAZE ORDER", hint:"MOVE FAST NEAR BULLETS", stat:"near", target:15, reward:3 },
+  { id:"breaker", label:"DASH BREAK ORDER", hint:"DASH → SLASH KILLS", stat:"strongKills", target:8, reward:4 },
+  { id:"blade", label:"BULLET BREAK ORDER", hint:"SLASH ENEMY BULLETS", stat:"bulletBreaks", target:24, reward:4 },
+  { id:"overdrive", label:"OVERDRIVE ORDER", hint:"KEEP BOOST AT MAX", stat:"overdriveTime", target:10, reward:4 },
+  { id:"reversal", label:"REVERSAL ORDER", hint:"JUST DODGE → SLASH", stat:"reversals", target:4, reward:5 },
+  { id:"breach", label:"POINT BLANK ORDER", hint:"SHOTGUN UNDER 190px", stat:"pointBlankKills", target:6, reward:4 }
 ];
 
 export const BOSS_VARIANTS = [
@@ -65,6 +68,11 @@ export const BOSS_VARIANTS = [
 
 export function pickRunContract(roll=Math.random()){
   return RUN_CONTRACTS[Math.min(RUN_CONTRACTS.length-1,Math.floor(Math.max(0,roll)*RUN_CONTRACTS.length))];
+}
+
+export function scaleRunContract(contract,stageIndex=0,endless=false){
+  const stage=Math.max(0,Math.min(STAGES.length-1,Math.floor(Number(stageIndex)||0))),scale=endless?1.5:.45+stage*.061;
+  return {...contract,target:contract.stat==="overdriveTime"?Math.max(2,Math.round(contract.target*scale*10)/10):Math.max(1,Math.ceil(contract.target*scale)),reward:contract.reward+(endless?2:stage>=6?1:0)};
 }
 
 export function contractProgress(contract,stats={}){
@@ -136,15 +144,27 @@ export function applyEscapePenalty(boost,count=1){
 }
 
 export function updateRunRecord(record={},run={}){
-  const previous={score:Math.max(0,Number(record.score)||0),clearTime:Math.max(0,Number(record.clearTime)||0),rank:["D","C","B","A","S"].includes(record.rank)?record.rank:"D",clears:Math.max(0,Number(record.clears)||0)};
-  const rankOrder={D:0,C:1,B:2,A:3,S:4},score=Math.max(0,Number(run.score)||0),time=Math.max(0,Number(run.time)||0),rank=rankOrder[run.rank]===undefined?"D":run.rank;
+  const previous={score:Math.max(0,Number(record.score)||0),clearTime:Math.max(0,Number(record.clearTime)||0),rank:["D","C","B","A","S"].includes(record.rank)?record.rank:"D",clears:Math.max(0,Number(record.clears)||0),bestKillRate:Math.max(0,Math.min(100,Number(record.bestKillRate)||0)),bestReversals:Math.max(0,Math.floor(Number(record.bestReversals)||0)),noDamageClear:Boolean(record.noDamageClear)};
+  const rankOrder={D:0,C:1,B:2,A:3,S:4},score=Math.max(0,Number(run.score)||0),time=Math.max(0,Number(run.time)||0),rank=rankOrder[run.rank]===undefined?"D":run.rank,killRate=Math.max(0,Math.min(100,Number(run.killRate)||0)),reversals=Math.max(0,Math.floor(Number(run.reversals)||0)),damage=Math.max(0,Number(run.damage)||0);
   const isBestScore=score>previous.score,isBestTime=Boolean(run.clear&&time&&(previous.clearTime===0||time<previous.clearTime)),isBestRank=rankOrder[rank]>rankOrder[previous.rank];
-  return {record:{score:isBestScore?score:previous.score,clearTime:isBestTime?time:previous.clearTime,rank:isBestRank?rank:previous.rank,clears:previous.clears+(run.clear?1:0)},isBestScore,isBestTime,isBestRank};
+  return {record:{score:isBestScore?score:previous.score,clearTime:isBestTime?time:previous.clearTime,rank:isBestRank?rank:previous.rank,clears:previous.clears+(run.clear?1:0),bestKillRate:Math.max(previous.bestKillRate,run.clear&&Object.hasOwn(run,"killRate")?killRate:0),bestReversals:Math.max(previous.bestReversals,run.clear&&Object.hasOwn(run,"reversals")?reversals:0),noDamageClear:previous.noDamageClear||Boolean(run.clear&&Object.hasOwn(run,"damage")&&damage===0)},isBestScore,isBestTime,isBestRank};
 }
 
-export function runRank({score=0,kills=0,near=0,dashNear=0,damage=0,maxCombo=0}={}){
-  const performance=score+kills*90+near*45+dashNear*120+maxCombo*55-damage*750;
-  if(performance>=18000&&damage<=1)return "S";
+export function stageMastery(record={}){
+  const rankOrder={D:0,C:1,B:2,A:3,S:4},rank=rankOrder[record.rank]===undefined?"D":record.rank;
+  const medals=[
+    {id:"clear",label:"CLEAR",earned:(Number(record.clears)||0)>0},
+    {id:"rank",label:"A-RANK",earned:rankOrder[rank]>=rankOrder.A},
+    {id:"hunter",label:"90% KILL",earned:(Number(record.bestKillRate)||0)>=90},
+    {id:"reversal",label:"REVERSAL ×3",earned:(Number(record.bestReversals)||0)>=3},
+    {id:"clean",label:"NO DAMAGE",earned:Boolean(record.noDamageClear)}
+  ];
+  return {medals,count:medals.filter(medal=>medal.earned).length,total:medals.length};
+}
+
+export function runRank({score=0,kills=0,near=0,dashNear=0,justDodge=0,strongKills=0,pointBlankKills=0,bulletBreaks=0,damage=0,maxCombo=0,escaped=0}={}){
+  const performance=score+kills*90+near*45+dashNear*120+justDodge*100+strongKills*180+pointBlankKills*90+bulletBreaks*20+maxCombo*55-damage*750-escaped*500;
+  if(performance>=18000&&damage<=1&&escaped<=1)return "S";
   if(performance>=10500)return "A";
   if(performance>=5500)return "B";
   if(performance>=2200)return "C";
@@ -152,9 +172,13 @@ export function runRank({score=0,kills=0,near=0,dashNear=0,damage=0,maxCombo=0}=
 }
 
 export function styleAward(stats={}){
-  const near=Math.max(0,Number(stats.near)||0),damage=Math.max(0,Number(stats.damage)||0),justDodge=Math.max(0,Number(stats.justDodge)||0),strongKills=Math.max(0,Number(stats.strongKills)||0),overdriveTime=Math.max(0,Number(stats.overdriveTime)||0),hazardDodges=Math.max(0,Number(stats.hazardDodges)||0);
+  const near=Math.max(0,Number(stats.near)||0),damage=Math.max(0,Number(stats.damage)||0),justDodge=Math.max(0,Number(stats.justDodge)||0),reversals=Math.max(0,Number(stats.reversals)||0),maxGrazeChain=Math.max(0,Number(stats.maxGrazeChain)||0),strongKills=Math.max(0,Number(stats.strongKills)||0),pointBlankKills=Math.max(0,Number(stats.pointBlankKills)||0),bulletBreaks=Math.max(0,Number(stats.bulletBreaks)||0),overdriveTime=Math.max(0,Number(stats.overdriveTime)||0),hazardDodges=Math.max(0,Number(stats.hazardDodges)||0);
   if(damage===0&&near>=12)return{id:"no-fear",label:"NO FEAR",description:"ノーダメージで弾幕へ接近",bonus:3};
+  if(maxGrazeChain>=8)return{id:"graze-flow",label:"GRAZE FLOW",description:`GRAZE CHAIN ×${Math.floor(maxGrazeChain)}`,bonus:3};
+  if(reversals>=3)return{id:"riposte-engine",label:"RIPOSTE ENGINE",description:`REVERSAL ×${Math.floor(reversals)}`,bonus:3};
   if(justDodge>=4)return{id:"razor-edge",label:"RAZOR EDGE",description:`JUST DODGE ×${Math.floor(justDodge)}`,bonus:2};
+  if(pointBlankKills>=5)return{id:"breacher",label:"BREACHER",description:`至近距離撃破 ×${Math.floor(pointBlankKills)}`,bonus:2};
+  if(bulletBreaks>=18)return{id:"blade-dancer",label:"BLADE DANCER",description:`敵弾破壊 ×${Math.floor(bulletBreaks)}`,bonus:2};
   if(strongKills>=6)return{id:"blade-storm",label:"BLADE STORM",description:`ダッシュ斬り撃破 ×${Math.floor(strongKills)}`,bonus:2};
   if(overdriveTime>=8)return{id:"redline",label:"REDLINE",description:`OVERDRIVE ${overdriveTime.toFixed(1)}秒`,bonus:2};
   if(hazardDodges>=3)return{id:"road-thread",label:"ROAD THREAD",description:`危険地帯突破 ×${Math.floor(hazardDodges)}`,bonus:1};

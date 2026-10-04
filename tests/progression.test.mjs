@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { applyUpgrades, applyOutfitModifiers, upgradeCost, weaponUpgradeCost, weaponUpgradeStats, waveSettings, chooseEnemyType, advanceWave, isRunClear, unlockAfterStageClear, applyEscapePenalty, updateRunRecord, runRank, styleAward, STAGES, WEAPONS, BOSS_VARIANTS, pickRunContract, contractProgress } from "../dist/js/progression.js";
+import { applyUpgrades, applyOutfitModifiers, upgradeCost, weaponUpgradeCost, weaponUpgradeStats, waveSettings, chooseEnemyType, advanceWave, isRunClear, unlockAfterStageClear, applyEscapePenalty, updateRunRecord, stageMastery, runRank, styleAward, STAGES, WEAPONS, BOSS_VARIANTS, pickRunContract, scaleRunContract, contractProgress } from "../dist/js/progression.js";
 
 test("恒久強化がキャラクター性能へ反映される",()=>{
   const base={hp:100,speed:1,fireRate:1,shotDamage:1,slashRange:1,slashDamage:1,dashSpeed:1,dashCooldown:1};
@@ -41,6 +41,7 @@ test("ステージ番号に応じて1～10ウェーブへ増え、10ステージ
 test("10ステージのイベント数が各ウェーブ数と一致し、4武器を切り替えられる",()=>{
   assert.equal(STAGES.length,10);assert.ok(STAGES.every(stage=>stage.events.length===stage.waveCount));assert.ok(STAGES.every(stage=>stage.hazard));
   assert.deepEqual(WEAPONS.map(weapon=>weapon.id),["pistol","shotgun","laser","missile"]);
+  assert.deepEqual(WEAPONS.map(weapon=>weapon.trait),["BALANCED","CLOSE BURST","PIERCE ×3","HOMING BLAST"]);
   assert.equal(BOSS_VARIANTS.length,10);
 });
 
@@ -52,22 +53,38 @@ test("クリアした次のステージを解放し、STAGE 10クリアでENDLES
 
 test("攻撃的でノーダメージな走行ほど高ランクになる",()=>{
   assert.equal(runRank({score:15000,kills:30,near:24,dashNear:12,damage:0,maxCombo:25}),"S");
+  assert.notEqual(runRank({score:15000,kills:30,near:24,dashNear:12,damage:0,maxCombo:25,escaped:6}),"S");
   assert.equal(runRank({score:300,kills:1,near:0,dashNear:0,damage:5,maxCombo:1}),"D");
+});
+
+test("ダッシュ斬り・至近距離射撃・敵弾破壊をランクへ加算する",()=>{
+  const passive=runRank({score:1000,kills:3});
+  const aggressive=runRank({score:1000,kills:3,strongKills:6,pointBlankKills:5,bulletBreaks:20,justDodge:4});
+  assert.ok(["D","C","B","A","S"].indexOf(aggressive)>["D","C","B","A","S"].indexOf(passive));
 });
 
 test("危険へ踏み込むプレイにSTYLE AWARDと追加報酬を与える",()=>{
   assert.deepEqual(styleAward({near:14,damage:0}),{id:"no-fear",label:"NO FEAR",description:"ノーダメージで弾幕へ接近",bonus:3});
+  assert.equal(styleAward({near:8,maxGrazeChain:8,damage:2}).id,"graze-flow");
+  assert.equal(styleAward({reversals:3,damage:2}).id,"riposte-engine");
   assert.equal(styleAward({justDodge:5,damage:2}).id,"razor-edge");
   assert.equal(styleAward({strongKills:7,damage:3}).id,"blade-storm");
+  assert.equal(styleAward({pointBlankKills:5,damage:3}).id,"breacher");
   assert.equal(styleAward({overdriveTime:9,damage:3}).id,"redline");
   assert.equal(styleAward({}).bonus,0);
 });
 
 test("RUN ORDERを選び、進捗と達成を判定できる",()=>{
   const first=pickRunContract(0),last=pickRunContract(.999);
-  assert.equal(first.id,"grazer");assert.equal(last.id,"overdrive");
+  assert.equal(first.id,"grazer");assert.equal(last.id,"breach");
   assert.deepEqual(contractProgress(first,{near:7}),{value:7,ratio:7/15,complete:false});
   assert.equal(contractProgress(first,{near:15}).complete,true);
+  const blade=pickRunContract(.45);assert.equal(blade.stat,"bulletBreaks");assert.equal(contractProgress(blade,{bulletBreaks:24}).complete,true);
+  const reversal=pickRunContract(.82);assert.equal(reversal.stat,"reversals");assert.equal(contractProgress(reversal,{reversals:4}).complete,true);
+  const breach=pickRunContract(.99);assert.equal(breach.stat,"pointBlankKills");assert.equal(contractProgress(breach,{pointBlankKills:6}).complete,true);
+  assert.equal(scaleRunContract(first,0).target,7);assert.equal(scaleRunContract(first,9).target,15);
+  assert.deepEqual(scaleRunContract({stat:"overdriveTime",target:10,reward:4},0),{stat:"overdriveTime",target:4.5,reward:4});
+  assert.deepEqual(scaleRunContract(first,0,true),{...first,target:23,reward:5});
 });
 
 test("敵を逃すとBOOSTが減り、0未満にはならない",()=>{
@@ -76,7 +93,14 @@ test("敵を逃すとBOOSTが減り、0未満にはならない",()=>{
 
 test("キャラクター別記録はスコア・ランク・最速クリアを個別更新する",()=>{
   const first=updateRunRecord({}, {score:5000,time:180,rank:"B",clear:true});
-  assert.deepEqual(first.record,{score:5000,clearTime:180,rank:"B",clears:1});
+  assert.deepEqual(first.record,{score:5000,clearTime:180,rank:"B",clears:1,bestKillRate:0,bestReversals:0,noDamageClear:false});
   const second=updateRunRecord(first.record,{score:4200,time:150,rank:"A",clear:true});
   assert.equal(second.record.score,5000);assert.equal(second.record.clearTime,150);assert.equal(second.record.rank,"A");assert.equal(second.record.clears,2);
+});
+
+test("ステージごとの5条件を永続記録し、再挑戦の達成度を返す",()=>{
+  const first=updateRunRecord({}, {score:9000,time:120,rank:"A",clear:true,killRate:84,damage:2}).record;
+  assert.deepEqual(stageMastery(first).medals.map(medal=>medal.earned),[true,true,false,false,false]);
+  const second=updateRunRecord(first,{score:8500,time:118,rank:"B",clear:true,killRate:93,reversals:4,damage:0}).record;
+  assert.equal(second.bestKillRate,93);assert.equal(second.bestReversals,4);assert.equal(second.noDamageClear,true);assert.equal(stageMastery(second).count,5);
 });

@@ -17,12 +17,13 @@
 
       <header class="hud hud-top" aria-live="polite">
         <div class="brand"><span>VELOCITY</span><b>//BREAKER</b><small>PROTOTYPE 01</small></div>
-        <div class="score-block"><small>SCORE</small><strong id="score">000000</strong><span id="combo">—</span></div>
+        <div class="score-block"><small>SCORE</small><strong id="score">000000</strong><span id="combo">—</span><i id="comboTimer" class="combo-timer"><b id="comboTimerBar"></b></i></div>
       </header>
 
       <aside class="hp-wrap" aria-label="ヒットポイント">
         <span>CORE</span><div class="hp-track"><i id="hpBar"></i></div><b id="hpText">100</b>
       </aside>
+      <div id="coreCritical" class="core-critical-alert" role="status" aria-live="assertive" hidden>CORE CRITICAL</div>
 
       <section class="boost-wrap" aria-label="ブーストゲージ">
         <div class="boost-label"><span id="boostLevel">BOOST LV1</span><b id="boostValue">0%</b></div>
@@ -31,9 +32,11 @@
 
       <div class="speed"><small>VELOCITY</small><strong id="speed">000</strong><span>km/h</span></div>
       <div class="run-status" aria-live="polite"><b id="stageLabel">STAGE 1 // VERDANT ROUTE</b><span id="waveLabel">WAVE 1 / 1</span><strong id="eventLabel">PURSUER APPROACH</strong><span class="wave-progress"><u><i id="waveProgressBar"></i></u><small id="waveCountdown">BOSS IN 12.0s</small></span><em>CORE <i id="runCore">0</i></em><i class="weapon-readout" id="weaponLabel">HG // HANDGUN</i></div>
-      <div class="run-contract" aria-live="polite"><small>RUN ORDER</small><b id="contractLabel">GRAZE ORDER</b><span><i id="contractBar"></i></span><em id="contractProgress">0 / 15</em><strong id="contractReward">CORE +3</strong></div>
+      <div class="run-contract" aria-live="polite"><small id="contractHint">RUN ORDER // MOVE FAST NEAR BULLETS</small><b id="contractLabel">GRAZE ORDER</b><span><i id="contractBar"></i></span><em id="contractProgress">0 / 15</em><strong id="contractReward">CORE +3</strong></div>
+      <section id="grazeFlow" class="graze-flow" aria-label="グレイズチェイン" aria-live="polite"><small>GRAZE FLOW</small><b id="grazeChain">×0</b><span><i id="grazeBar"></i><em id="grazeTimer"></em></span><strong id="grazeStatus">MOVE FAST TO CHAIN</strong></section>
       <section class="action-ready" aria-label="アクション再使用状況"><div><small>DASH</small><span><i id="dashReadyBar"></i></span><b id="dashReadyText">READY</b></div><div><small>BLADE</small><span><i id="slashReadyBar"></i></span><b id="slashReadyText">READY</b></div><div><small>SLIDE</small><span><i id="slideReadyBar"></i></span><b id="slideReadyText">READY</b></div></section>
-      <section id="bossHud" class="boss-hud" aria-label="ボス耐久値" hidden><small id="bossName">PURSUER // ROAD HUNTER</small><div><i id="bossBar"></i></div><b id="bossHp">0%</b></section>
+      <section id="trainingHint" class="training-hint" aria-live="polite" hidden><small>DRIVE TRAINING</small><b id="trainingText">WASD / STICK // MOVE</b><span id="trainingProgress" aria-label="チュートリアル進行">□□□□□□□□</span></section>
+      <section id="bossHud" class="boss-hud" aria-label="ボス耐久値" hidden><small id="bossName">PURSUER // ROAD HUNTER</small><div><i id="bossBar"></i></div><b id="bossHp">0%</b><em id="bossIntent">NEXT // TRIPLE HUNT</em></section>
       <div id="announcer" class="announcer" aria-live="assertive"></div>
       <div id="launchCountdown" class="launch-countdown" hidden aria-live="assertive"><small>BOOST DRIVE // STANDBY</small><b id="launchCount">3</b></div>
       <div id="debug" class="debug" hidden></div>
@@ -42,7 +45,7 @@
         <button id="touchPause" class="touch-pause" type="button" aria-label="ゲームを一時停止" aria-pressed="false"><b>Ⅱ</b><small>PAUSE</small></button>
         <div id="touchStick" class="touch-stick" aria-label="移動スティック"><i id="touchStickKnob"></i><span>MOVE</span></div>
         <div class="touch-actions">
-          <button class="touch-button touch-weapon" type="button" data-touch-key="KeyQ"><b>Q</b><small>WEAPON</small></button>
+          <button class="touch-button touch-weapon" type="button" data-touch-key="KeyQ" aria-label="武器切替 現在ハンドガン"><b id="touchWeaponIcon">HG</b><small>WEAPON</small></button>
           <button class="touch-button touch-slide" type="button" data-touch-key="KeyC"><b>C</b><small>SLIDE</small></button>
           <button class="touch-button touch-dash" type="button" data-touch-key="Space"><b>≫</b><small>DASH</small></button>
           <button class="touch-button touch-slash" type="button" data-touch-key="KeyX"><b>刃</b><small>SLASH</small></button>
@@ -61,14 +64,14 @@
           <h1>弾幕へ、<br><em>踏み込め。</em></h1>
           <p class="lead" id="selectedCharacterLead"><strong>レイ</strong> — 都市警備組織から逃亡した元実験体。脚部のBOOST DRIVEで、追手の弾幕を速度へ変える。</p>
           <div class="start-actions">
-            <button id="startButton" type="button"><span>RUN PROTOTYPE</span><small>ENTER</small></button>
+            <button id="startButton" type="button"><span>RUN PROTOTYPE</span><small>ENTER / PAD A</small></button>
             <button id="openStageSelect" class="secondary-button" type="button"><span id="selectedRouteButton">SELECT ROUTE // STAGE 1</span><small>10 STAGES + ∞</small></button>
             <button id="openSpriteSelect" class="secondary-button" type="button"><span>SELECT LOADOUT</span><small>3 CHARACTERS</small></button>
             <button id="openHelp" class="secondary-button" type="button"><span>操作説明</span><small>H</small></button>
           </div>
           <div class="bank-core">DRIVE CORE <b id="bankCore">0</b><small>敵から回収して恒久強化に使用</small></div>
           <div class="best-record" id="bestRecord">PERSONAL BEST // NO DATA</div>
-          <p class="hint"><kbd>V</kbd> 背景抑制 <b id="focusStatus">OFF</b>　<kbd>M</kbd> サウンド　<kbd>P</kbd> ポーズ</p>
+          <p class="hint"><kbd>V</kbd> 背景抑制 <b id="focusStatus">OFF</b>　<kbd>M</kbd> サウンド　<kbd>P / ESC</kbd> ポーズ</p>
         </div>
       </section>
 
@@ -78,9 +81,9 @@
         <div class="rank-badge"><small>RUN RANK</small><b id="runRank">D</b></div>
         <div class="result-record" id="resultRecord">PERSONAL BEST UPDATED</div>
         <dl><div><dt>SCORE</dt><dd id="finalScore">0</dd></div><div><dt>MAX COMBO</dt><dd id="maxCombo">0</dd></div><div><dt>REACHED</dt><dd id="stageReached">S1-W1</dd></div></dl>
-        <div class="run-report"><span>KILL <b id="resultKills">0</b></span><span>NEAR MISS <b id="resultNear">0</b></span><span>DAMAGE <b id="resultDamage">0</b></span><span>TIME <b id="resultTime">00:00</b></span></div>
+        <div class="run-report"><span>KILL RATE <b id="resultKills">0%</b></span><span>NEAR MISS <b id="resultNear">0</b></span><span>REVERSAL <b id="resultReversal">0</b></span><span>DASH BREAK <b id="resultStrong">0</b></span><span>POINT BLANK <b id="resultBreach">0</b></span><span>BULLET BREAK <b id="resultBreaks">0</b></span><span>MAX GRAZE <b id="resultGraze">0</b></span><span>DAMAGE <b id="resultDamage">0</b></span><span>TIME <b id="resultTime">00:00</b></span></div>
         <div class="reward-summary"><span>RECOVERED</span><strong>◆ <b id="runReward">0</b></strong><small>TOTAL CORE <b id="resultCore">0</b></small><em id="styleAward">STYLE // KEEP PUSHING</em><em id="resultChip">CHIP // —</em></div>
-        <div class="game-over-actions"><button id="restartButton" type="button"><span id="restartLabel">REBOOT</span><small>ENTER</small></button><button id="resultRoute" class="secondary-button" type="button"><span>ROUTE</span><small>ステージ選択</small></button><button id="resultUpgrade" class="secondary-button" type="button"><span>UPGRADE</span><small>強化へ</small></button></div>
+        <div class="game-over-actions"><button id="restartButton" type="button"><span id="restartLabel">REBOOT</span><small>ENTER / R / PAD A</small></button><button id="resultRoute" class="secondary-button" type="button"><span>ROUTE</span><small>ステージ選択</small></button><button id="resultUpgrade" class="secondary-button" type="button"><span>UPGRADE</span><small>強化へ</small></button></div>
       </section>
 
       <section id="moduleDraft" class="overlay module-draft" hidden aria-labelledby="moduleDraftTitle">
@@ -88,7 +91,7 @@
         <h2 id="moduleDraftTitle">SYNC MODULE</h2>
         <p class="module-lead">走行データから一時強化を生成。効果はこの挑戦中だけ有効です。</p>
         <div id="moduleChoices" class="module-choices"></div>
-        <small class="module-hint">タップ / 1・2・3キーで選択</small>
+        <small class="module-hint">タップ / 1・2・3キー / ゲームパッド A・B・Xで選択</small>
       </section>
 
       <section id="controlHelp" class="overlay control-help" hidden aria-labelledby="controlHelpTitle">
@@ -104,16 +107,18 @@
             <div><kbd data-bind-label="dash">SPACE</kbd><i class="action-line dash-line"></i><strong>無敵ダッシュ</strong><small>Shiftも使用可</small></div>
             <div><kbd data-bind-label="slash">X</kbd><i class="action-line slash-line"></i><strong>斬撃</strong><small>K / 右クリックも使用可</small></div>
             <div><kbd data-bind-label="slide">C</kbd><i class="action-line dash-line"></i><strong>スライディング</strong><small>Ctrlも使用可</small></div>
-            <div><kbd data-bind-label="weapon">Q</kbd><i class="action-line shoot-line"></i><strong>武器切替</strong><small>4種を順番に変更</small></div>
+            <div><kbd data-bind-label="weapon">Q</kbd><i class="action-line shoot-line"></i><strong>武器切替</strong><small>1～4 / マウスホイールも使用可</small></div>
           </div>
           <div class="mouse-map">
             <div class="mouse-shape"><i></i><b></b></div>
             <span><em>L</em> カーソル方向へ射撃</span><span><em>R</em> 斬撃・敵弾破壊</span>
           </div>
-          <figcaption><b>SPACE → X</b> で敵へ吸着するダッシュ斬り。高速中の逆入力で急旋回。ダッシュ直後の弾際は<b>JUST DODGE</b>となりBOOSTを大量獲得。<br><b>スマホ：</b>左スティック＋右側アクションボタン。<b>ゲームパッド：</b>左スティック移動、A/RT射撃、LB/RBダッシュ、X斬撃。</figcaption>
+          <figcaption><b>SPACE → X</b> で敵へ吸着するダッシュ斬り。高速中の逆入力で急旋回。ダッシュ直後の弾際は<b>JUST DODGE</b>となり、1.15秒以内の次の斬撃が<b>REVERSAL ×1.5</b>に強化。<br><b>スマホ：</b>左スティック＋右側アクションボタン。<b>ゲームパッド：</b>左スティック／十字キー移動、右スティック照準、A/RT射撃、LB/RBダッシュ、X斬撃、Y武器切替。メニューでは十字キー／左スティックで選択、Aで決定、Bで戻る。</figcaption>
         </figure>
+        <section class="weapon-guide" aria-label="武器特性"><header><small>WEAPON ROLES</small><b>状況に合わせて即時切替</b></header><div><article><i>1 / HG</i><strong>HANDGUN</strong><span>連射と威力の標準型</span></article><article><i>2 / SG</i><strong>SHOTGUN</strong><span>190px以内で威力1.3倍</span></article><article><i>3 / LS</i><strong>LASER</strong><span>最大3体貫通でPRISMボーナス</span></article><article><i>4 / MS</i><strong>MISSILE</strong><span>3体以上巻き込みでBLASTボーナス</span></article></div></section>
+        <section class="combat-loop" aria-label="攻撃的な基本戦術"><header><small>AGGRESSIVE FLOW</small><b>止まらず、弾幕を攻撃に変える</b></header><div><article><i>01</i><strong>APPROACH</strong><span>撃ちながら敵弾へ高速接近</span></article><em>›</em><article><i>02</i><strong>GRAZE</strong><span>移動中のNEAR MISSで連鎖</span></article><em>›</em><article><i>03</i><strong>BOOST</strong><span>FLOWを維持して性能上昇</span></article><em>›</em><article><i>04</i><strong>REVERSAL</strong><span>JUST DODGE直後に強化斬撃</span></article><em>›</em><article><i>05</i><strong>BREAK</strong><span>敵弾と敵をまとめて破壊</span></article></div><p>停止中のかすりは <b>SLOW GRAZE</b> となり、報酬低下・GRAZE CHAINなし。危険地帯を走り続けるほど有利です。</p></section>
         <section class="key-config" aria-labelledby="keyConfigTitle"><header><small>KEY CONFIG</small><h3 id="keyConfigTitle">アクションキー設定</h3></header><div id="keyConfigGrid"></div><button id="resetKeys" type="button">初期設定に戻す</button></section>
-        <section class="visual-settings" aria-labelledby="visualSettingsTitle"><header><small>ACCESSIBILITY</small><h3 id="visualSettingsTitle">画面演出設定</h3></header><div><button id="settingFocus" type="button" aria-pressed="false"><span>背景抑制</span><b>OFF</b></button><button id="settingShake" type="button" aria-pressed="true"><span>画面揺れ</span><b>ON</b></button><button id="settingFlash" type="button" aria-pressed="true"><span>被弾フラッシュ</span><b>ON</b></button></div></section>
+        <section class="visual-settings" aria-labelledby="visualSettingsTitle"><header><small>ACCESSIBILITY</small><h3 id="visualSettingsTitle">画面演出設定</h3></header><div><button id="settingFocus" type="button" aria-pressed="false"><span>背景抑制</span><b>OFF</b></button><button id="settingContrast" type="button" aria-pressed="true"><span>弾コントラスト</span><b>ON</b></button><button id="settingShake" type="button" aria-pressed="true"><span>画面揺れ</span><b>ON</b></button><button id="settingFlash" type="button" aria-pressed="true"><span>被弾フラッシュ</span><b>ON</b></button><button id="settingHaptics" type="button" aria-pressed="true"><span>端末・パッド振動</span><b>ON</b></button></div></section>
         <button id="closeHelp" type="button"><span>ゲームへ戻る</span><small>H / ESC</small></button>
       </section>
 
@@ -156,9 +161,9 @@
         <div class="selector-footer"><span id="selectedSpriteLabel">RAY // OUTFIT 07 FLUFF JACKET</span><button id="closeSpriteSelect" type="button"><span>この装備で戻る</span><small>ESC</small></button></div>
       </section>
 
-      <div id="pause" class="pause" hidden><b>PAUSED</b><button id="resumeButton" type="button"><span>RESUME</span><small>P / ESC</small></button><button id="audioToggle" class="secondary-button" type="button"><span>SOUND ON</span><small>M</small></button><button id="pauseHelp" class="secondary-button" type="button"><span>CONTROLS / SETTINGS</span><small>操作・画面演出</small></button></div>
+      <div id="pause" class="pause" hidden><b id="pauseTitle">PAUSED</b><button id="resumeButton" type="button"><span>RESUME</span><small>P / ESC</small></button><button id="audioToggle" class="secondary-button" type="button"><span>SOUND ON</span><small>M</small></button><button id="pauseHelp" class="secondary-button" type="button"><span>CONTROLS / SETTINGS</span><small>操作・画面演出</small></button><button id="pauseAbort" class="secondary-button danger-button" type="button"><span>END RUN</span><small>回収分を持って終了</small></button></div>
     </section>
-    <footer><span>VERDANT ROUTE</span><i></i><span>AGGRESSION REWARDED</span></footer>
+    <footer><span id="footerStage">VERDANT ROUTE</span><i></i><span>AGGRESSION REWARDED</span></footer>
   </main>
   <script type="module" src="./js/game.js"></script>
 </body>
